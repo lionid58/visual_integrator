@@ -1,0 +1,19 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "visual-integrator",
+  "version-string": "0.1.0",
+  "dependencies": [
+    "catch2",
+    "eigen3",
+    "glad",
+    "glfw3",
+    "glm",
+    {
+      "name": "imgui",
+      "features": [
+        "glfw-binding",
+        "opengl3-binding"
+      ]
+    }
+  ]
+}
