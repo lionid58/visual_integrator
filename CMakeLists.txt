@@ -12,9 +12,11 @@ find_package(glad CONFIG REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
+find_package(muparser CONFIG REQUIRED)
 
 add_executable(visual_integrator src/main.cpp)
 target_link_libraries(visual_integrator PRIVATE
+  muparser::muparser
   Eigen3::Eigen
   glad::glad
   glfw
@@ -29,9 +31,19 @@ include(cmake/ClangFormat.cmake)
 
 if(VISUAL_INTEGRATOR_BUILD_TESTS)
   enable_testing()
-  find_package(Catch2 3 CONFIG REQUIRED)
+  find_package(GTest CONFIG REQUIRED)
   add_executable(unit_tests tests/smoke_test.cpp)
-  target_link_libraries(unit_tests PRIVATE Catch2::Catch2WithMain)
-  include(Catch)
-  catch_discover_tests(unit_tests)
+  target_link_libraries(unit_tests PRIVATE
+    GTest::gtest_main
+    muparser::muparser
+    Eigen3::Eigen
+    glad::glad
+    glfw
+    glm::glm
+    imgui::imgui)
+  if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(unit_tests PRIVATE -Wall -Wextra -Wpedantic)
+  endif()
+  include(GoogleTest)
+  gtest_discover_tests(unit_tests)
 endif()

@@ -2,13 +2,13 @@
 
 ## Project Structure & Module Organization
 
-This is a C++20 OpenGL application built with CMake and Ninja. Application code lives in `src/`; place reusable public headers in `include/`. Tests belong in `tests/` and are registered through Catch2. CMake helpers live in `cmake/`, while dependency versions and features are declared in `vcpkg.json`. Keep generated files under `build/` (for example, `build/default`) and do not commit build output or `vcpkg_installed/`.
+This is a C++20 OpenGL application built with CMake and Ninja. Application code lives in `src/`; place reusable public headers in `include/`. Tests belong in `tests/` and are registered through GoogleTest. CMake helpers live in `cmake/`, while dependency versions and features are declared in `vcpkg.json`. Keep generated files under `build/` (for example, `build/default`) and do not commit build output or `vcpkg_installed/`.
 
 ## Build, Test, and Development Commands
 
 - `cmake --preset default` configures a Debug build, enables tests, and generates Ninja files.
 - `cmake --build --preset default` compiles the application and test executable.
-- `ctest --preset default` runs all discovered Catch2 tests and prints failures.
+- `ctest --preset default` runs all discovered GoogleTest tests and prints failures.
 - `cmake --build --preset format-check` checks formatting without changing files.
 - `cmake --build --preset format` applies clang-format to C++ sources and headers.
 - `cmake --preset release && cmake --build --preset release` creates an optimized build without tests.
@@ -21,7 +21,7 @@ Use C++20 and keep compiler warnings (`-Wall -Wextra -Wpedantic`) clean. `.clang
 
 ## Testing Guidelines
 
-Tests use Catch2 v3 and `catch_discover_tests`. Add focused `TEST_CASE` blocks to files named `*_test.cpp` under `tests/`, and register new test source files in `CMakeLists.txt`. Cover new behavior and regressions; no numeric coverage threshold is currently configured. Run the default build and `ctest --preset default` before submitting changes.
+Tests use GoogleTest and `gtest_discover_tests`. Add focused `TEST` blocks to files named `*_test.cpp` under `tests/`, and register new test source files in `CMakeLists.txt`. Cover new behavior and regressions; no numeric coverage threshold is currently configured. Run the default build and `ctest --preset default` before submitting changes.
 
 ## Commit & Pull Request Guidelines
 

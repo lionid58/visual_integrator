@@ -3,17 +3,18 @@
   "name": "visual-integrator",
   "version-string": "0.1.0",
   "dependencies": [
-    "catch2",
     "eigen3",
     "glad",
     "glfw3",
     "glm",
+    "gtest",
     {
       "name": "imgui",
       "features": [
         "glfw-binding",
         "opengl3-binding"
       ]
-    }
+    },
+    "muparser"
   ]
 }
