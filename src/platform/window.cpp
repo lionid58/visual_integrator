@@ -6,18 +6,37 @@
 #include <algorithm>
 #include <iostream>
 #include <stdexcept>
+#include <string>
 
 namespace visual_integrator {
+namespace {
+
+void log_glfw_error(int error_code, const char* description) {
+  std::cerr << "GLFW error " << error_code << ": " << (description ? description : "unknown error")
+            << '\n';
+}
+
+std::runtime_error glfw_error(const std::string& action) {
+  const char* description = nullptr;
+  const int error_code = glfwGetError(&description);
+  if (error_code == GLFW_NO_ERROR) {
+    return std::runtime_error(action);
+  }
+  return std::runtime_error(action + ": " + (description ? description : "unknown GLFW error"));
+}
+
+}  // namespace
 
 Window::Window() {
+  glfwSetErrorCallback(log_glfw_error);
   if (!glfwInit()) {
-    throw std::runtime_error("Failed to initialize GLFW");
+    throw glfw_error("Failed to initialize GLFW");
   }
   try {
     GLFWmonitor* monitor = glfwGetPrimaryMonitor();
     const GLFWvidmode* mode = monitor ? glfwGetVideoMode(monitor) : nullptr;
     if (!mode) {
-      throw std::runtime_error("Failed to get the primary monitor video mode");
+      throw glfw_error("Failed to get the primary monitor video mode");
     }
     std::cout << "Primary monitor resolution: " << mode->width << 'x' << mode->height << '\n';
 
@@ -33,10 +52,16 @@ Window::Window() {
     constexpr double WINDOW_FRACTION = 0.8;
     const int width = std::max(1, static_cast<int>(work_width * WINDOW_FRACTION));
     const int height = std::max(1, static_cast<int>(work_height * WINDOW_FRACTION));
+
+    glfwDefaultWindowHints();
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
     window_ = glfwCreateWindow(width, height, "integrator app", nullptr, nullptr);
     if (!window_) {
-      throw std::runtime_error("Failed to create GLFW window");
+      throw glfw_error("Failed to create GLFW window with an OpenGL 3.3 context");
     }
     glfwMakeContextCurrent(window_);
     glfwSwapInterval(1);
@@ -50,7 +75,9 @@ Window::Window() {
 }
 
 Window::~Window() {
-  glfwDestroyWindow(window_);
+  if (window_) {
+    glfwDestroyWindow(window_);
+  }
   glfwTerminate();
 }
 

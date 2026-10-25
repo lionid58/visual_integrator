@@ -30,6 +30,8 @@ target_link_libraries(visual_integrator PRIVATE
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
   target_compile_options(visual_integrator PRIVATE -Wall -Wextra -Wpedantic)
+elseif(MSVC)
+  target_compile_options(visual_integrator PRIVATE /W4 /permissive-)
 endif()
 
 include(cmake/ClangFormat.cmake)
@@ -48,6 +50,8 @@ if(VISUAL_INTEGRATOR_BUILD_TESTS)
     imgui::imgui)
   if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     target_compile_options(unit_tests PRIVATE -Wall -Wextra -Wpedantic)
+  elseif(MSVC)
+    target_compile_options(unit_tests PRIVATE /W4 /permissive-)
   endif()
   include(GoogleTest)
   gtest_discover_tests(unit_tests)
