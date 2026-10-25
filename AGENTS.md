@@ -4,6 +4,30 @@
 
 This is a C++20 OpenGL application built with CMake and Ninja. Application code lives in `src/`; place reusable public headers in `include/`. Tests belong in `tests/` and are registered through GoogleTest. CMake helpers live in `cmake/`, while dependency versions and features are declared in `vcpkg.json`. Keep generated files under `build/` (for example, `build/default`) and do not commit build output or `vcpkg_installed/`.
 
+## Architecture & Data Flow
+
+`struct.md` describes the intended architecture for visualizing three-dimensional integration:
+
+1. `ui`: collect input and display controls, fields, and validation feedback.
+2. `parsing`: turn input into a complete mathematical problem or return validation errors.
+3. `math`: build the mathematical model and solve the complete problem.
+4. `visualization`: prepare solution data for rendering and maintain camera/view transformations.
+5. `rendering`: draw prepared data with OpenGL.
+
+The input stages use a resettable queue of pending edits. Downstream computation consumes only complete, validated snapshots. Changes to the mathematical problem require a full recomputation of dependent results. Rotation and zoom reuse the existing solution and visualization data, updating view transformations without rerunning parsing or integration. Keep GLFW, OpenGL, and ImGui out of parsing and math interfaces.
+
+Current implementation:
+
+- `src/main.cpp`: entry point and top-level error reporting only.
+- `src/app.cpp`: application orchestration and event/render loop.
+- `src/platform/window.cpp`: GLFW initialization, monitor queries, window/context ownership, events, and buffer swapping.
+- `src/rendering/renderer.cpp`: OpenGL loading, framebuffer viewport, and drawing.
+- Shared interfaces mirror these modules under `include/visual_integrator/`.
+
+The `ui`, `parsing`, `math`, and `visualization` modules are planned, not implemented. Add matching directories under `src/` and shared headers under `include/visual_integrator/` when behavior is introduced; avoid empty placeholder modules. Register new translation units explicitly in `CMakeLists.txt`.
+
+`Window` currently owns the single application window and the GLFW lifetime. Create it on the main thread before the renderer, and destroy rendering resources before the window/context. Use RAII so exceptions release resources. Use GLFW APIs for platform integration. Window sizes use screen coordinates; rendering uses framebuffer dimensions for HiDPI support.
+
 ## Build, Test, and Development Commands
 
 - `cmake --preset default` configures a Debug build, enables tests, and generates Ninja files.

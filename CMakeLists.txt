@@ -14,7 +14,12 @@ find_package(glm CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
 find_package(muparser CONFIG REQUIRED)
 
-add_executable(visual_integrator src/main.cpp)
+add_executable(visual_integrator
+  src/main.cpp
+  src/app.cpp
+  src/platform/window.cpp
+  src/rendering/renderer.cpp)
+target_include_directories(visual_integrator PRIVATE include)
 target_link_libraries(visual_integrator PRIVATE
   muparser::muparser
   Eigen3::Eigen
