@@ -19,7 +19,8 @@ add_executable(visual_integrator
   src/app.cpp
   src/platform/window.cpp
   src/rendering/renderer.cpp
-  src/visualization/voxel.cc)
+  src/visualization/voxel.cc
+  src/ui/menu.cpp)
 target_include_directories(visual_integrator PRIVATE include)
 target_link_libraries(visual_integrator PRIVATE
   muparser::muparser

@@ -4,9 +4,12 @@
 #include "visual_integrator/app.h"
 
 int main() {
-  try {
+  try 
+  {
     return visual_integrator::run();
-  } catch (const std::exception& error) {
+  } 
+  catch (const std::exception& error) 
+  {
     std::cerr << error.what() << '\n';
     return 1;
   }
