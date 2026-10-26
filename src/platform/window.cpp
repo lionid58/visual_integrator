@@ -13,8 +13,8 @@ namespace visual_integrator {
 namespace {
 
 void log_glfw_error(int error_code, const char* description) {
-  std::cerr << "GLFW error " << error_code << ": " << (description ? description : "unknown error")
-            << '\n';
+  std::cerr << "GLFW error " << error_code << ": "
+            << (description ? description : "unknown error") << '\n';
 }
 
 std::runtime_error glfw_error(const std::string& action) {
@@ -23,7 +23,8 @@ std::runtime_error glfw_error(const std::string& action) {
   if (error_code == GLFW_NO_ERROR) {
     return std::runtime_error(action);
   }
-  return std::runtime_error(action + ": " + (description ? description : "unknown GLFW error"));
+  return std::runtime_error(action + ": " +
+                            (description ? description : "unknown GLFW error"));
 }
 
 }  // namespace
@@ -39,20 +40,25 @@ Window::Window() {
     if (!mode) {
       throw glfw_error("Failed to get the primary monitor video mode");
     }
-    std::cout << "Primary monitor resolution: " << mode->width << 'x' << mode->height << '\n';
+    std::cout << "Primary monitor resolution: " << mode->width << 'x'
+              << mode->height << '\n';
 
-    // Work areas and window sizes use screen coordinates, not framebuffer pixels.
+    // Work areas and window sizes use screen coordinates, not framebuffer
+    // pixels.
     int work_width = 0;
     int work_height = 0;
-    glfwGetMonitorWorkarea(monitor, nullptr, nullptr, &work_width, &work_height);
+    glfwGetMonitorWorkarea(monitor, nullptr, nullptr, &work_width,
+                           &work_height);
     if (work_width <= 0 || work_height <= 0) {
       work_width = mode->width;
       work_height = mode->height;
     }
 
     constexpr double WINDOW_FRACTION = 0.8;
-    const int width = std::max(1, static_cast<int>(work_width * WINDOW_FRACTION));
-    const int height = std::max(1, static_cast<int>(work_height * WINDOW_FRACTION));
+    const int width =
+        std::max(1, static_cast<int>(work_width * WINDOW_FRACTION));
+    const int height =
+        std::max(1, static_cast<int>(work_height * WINDOW_FRACTION));
 
     // Select GL version + let the backend select a GLSL version
     // this part I also copy from example:
@@ -63,9 +69,11 @@ Window::Window() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-    window_ = glfwCreateWindow(width, height, "integrator app", nullptr, nullptr);
+    window_ =
+        glfwCreateWindow(width, height, "integrator app", nullptr, nullptr);
     if (!window_) {
-      throw glfw_error("Failed to create GLFW window with an OpenGL 3.3 context");
+      throw glfw_error(
+          "Failed to create GLFW window with an OpenGL 3.3 context");
     }
     glfwMakeContextCurrent(window_);
     glfwSwapInterval(1);
@@ -77,7 +85,8 @@ Window::Window() {
     ImGui::CreateContext();        // ???
     ImGuiIO& io = ImGui::GetIO();  // frons and sth
     (void)io;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
+    io.ConfigFlags |=
+        ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
     ImGui_ImplGlfw_InitForOpenGL(window_, true);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
@@ -114,5 +123,14 @@ std::pair<int, int> Window::framebuffer_size() const {
 
 void Window::poll_events() const { glfwPollEvents(); }
 void Window::swap_buffers() const { glfwSwapBuffers(window_); }
+void Window::CleanUpGUI() const {
+  // Cleanup
+  ImGui_ImplOpenGL3_Shutdown();
+  ImGui_ImplGlfw_Shutdown();
+  ImGui::DestroyContext();
+
+  glfwDestroyWindow(window_);
+  glfwTerminate();
+}
 
 }  // namespace visual_integrator

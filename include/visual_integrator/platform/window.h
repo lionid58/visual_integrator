@@ -9,8 +9,8 @@ struct GLFWwindow;
 
 namespace visual_integrator {
 
-// Owns the application's single window and GLFW lifetime. Use on the main thread.
-// The OpenGL context is current after construction.
+// Owns the application's single window and GLFW lifetime. Use on the main
+// thread. The OpenGL context is current after construction.
 class Window {
  public:
   Window();
@@ -25,6 +25,7 @@ class Window {
   std::pair<int, int> framebuffer_size() const;
   void poll_events() const;
   void swap_buffers() const;
+  void CleanUpGUI() const;
 
  private:
   GLFWwindow* window_ = nullptr;
