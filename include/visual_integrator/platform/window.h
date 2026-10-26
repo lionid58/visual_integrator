@@ -1,5 +1,7 @@
 #pragma once
-
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
 #include <utility>
 
 struct GLFWwindow;
@@ -22,6 +24,7 @@ class Window {
   std::pair<int, int> framebuffer_size() const;
   void poll_events() const;
   void swap_buffers() const;
+  void CleanUpGUI() const;
 
  private:
   GLFWwindow* window_ = nullptr;
