@@ -17,7 +17,7 @@ namespace Voxels {
         glm::vec3 position;
         std::vector<Voxel> voxels_grid;
         double voxel_size;
-        void update_grid();
+        glm::vec3 dimention_size;
 
     public:
         VoxelObject(std::function<bool(glm::vec3)> predicate, std::array<double,6> area, double vox_size, glm::vec3 pos);
