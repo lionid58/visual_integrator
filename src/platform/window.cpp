@@ -92,7 +92,13 @@ Window::Window() {
 
 Window::~Window() {
   if (window_) {
+    // Cleanup GUI
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+
     glfwDestroyWindow(window_);
+    glfwTerminate();
   }
   glfwTerminate();
 }
@@ -108,15 +114,5 @@ std::pair<int, int> Window::framebuffer_size() const {
 
 void Window::poll_events() const { glfwPollEvents(); }
 void Window::swap_buffers() const { glfwSwapBuffers(window_); }
-void Window::CleanUpGUI() const
-{
-  // Cleanup
-  ImGui_ImplOpenGL3_Shutdown();
-  ImGui_ImplGlfw_Shutdown();
-  ImGui::DestroyContext();
-
-  glfwDestroyWindow(window_);
-  glfwTerminate();
-}
 
 }  // namespace visual_integrator
