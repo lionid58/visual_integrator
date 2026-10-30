@@ -14,7 +14,8 @@ Renderer::Renderer() {
   }
 }
 
-void Renderer::render_frame(int framebuffer_width, int framebuffer_height) const {
+void Renderer::render_frame(int framebuffer_width,
+                            int framebuffer_height) const {
   // тут мы назначаем окно
   glViewport(0, 0, framebuffer_width, framebuffer_height);
   // я очень захотел сиреневое окно, оно крутое

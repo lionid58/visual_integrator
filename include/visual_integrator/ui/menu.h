@@ -11,6 +11,8 @@ class Menu {
 
   bool startCalc = false;
 
+  bool startCalc = false;
+
   // ImGuiWindowFlags menu_flags = 0;
   // bool menu_open = true,
   bool openDemoWind = false;

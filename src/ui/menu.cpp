@@ -28,12 +28,14 @@ void Menu::Show() {
   //--------------VOXEL GRID--------------------
   ImGui::SeparatorText("VOXEL GRID");
   ImGui::SetNextItemWidth(-1.0);
-  ImGui::ProgressBar(-1.0f * (float)ImGui::GetTime(), ImVec2(0.0f, 0.0f), "In develop...");
+  ImGui::ProgressBar(-1.0f * (float)ImGui::GetTime(), ImVec2(0.0f, 0.0f),
+                     "In develop...");
 
   //--------------ANIMATION PARAMS--------------
   ImGui::SeparatorText("ANIMATION PARAMETERS");
   ImGui::SetNextItemWidth(-1.0);
-  ImGui::ProgressBar(-1.0f * (float)ImGui::GetTime(), ImVec2(0.0f, 0.0f), "In develop...");
+  ImGui::ProgressBar(-1.0f * (float)ImGui::GetTime(), ImVec2(0.0f, 0.0f),
+                     "In develop...");
 
   //--------------DELETE LATER------------------
   ImGui::SeparatorText("DELETE LATER");
