@@ -2,6 +2,19 @@
 
 C++20/OpenGL application built with CMake and dependencies managed by vcpkg.
 
+## Project structure
+
+- `src/main.cpp`, `src/app.cpp`: entry point and application orchestration.
+- `src/platform/`: GLFW window and context ownership.
+- `src/rendering/`: OpenGL rendering.
+- `src/visualization/`: voxel and geometric data for visualization.
+- `include/visual_integrator/`: shared headers mirroring the source modules.
+- `tests/`: GoogleTest tests; `cmake/`: build helpers.
+
+The `ui`, `parsing`, and `math` modules described in `struct.md` will be added
+when their behavior is implemented. The primitive files are unfinished drafts
+and are not compiled yet.
+
 ## Build and test
 
 Set `VCPKG_ROOT` to the directory where vcpkg is installed. On Linux:
