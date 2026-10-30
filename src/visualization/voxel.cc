@@ -1,4 +1,4 @@
-#include "visual_integrator/graphics/voxel.hh"
+#include "visual_integrator/visualization/voxel.hh"
 
 namespace Voxels
 {

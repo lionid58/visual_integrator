@@ -1,4 +1,4 @@
-#include "visual_integrator/graphics/renderer.h"
+#include "visual_integrator/rendering/renderer.h"
 
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>

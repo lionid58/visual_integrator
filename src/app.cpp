@@ -1,7 +1,7 @@
 #include "visual_integrator/app.h"
 
 #include "visual_integrator/platform/window.h"
-#include "visual_integrator/graphics/renderer.h"
+#include "visual_integrator/rendering/renderer.h"
 
 namespace visual_integrator {
 
