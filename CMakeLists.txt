@@ -21,6 +21,7 @@ add_executable(visual_integrator
   src/rendering/renderer.cpp
   src/ui/menu.cpp 
   src/mathcore/parser.cpp)
+  src/visualization/voxel.cc)
 target_include_directories(visual_integrator PRIVATE include)
 target_link_libraries(visual_integrator PRIVATE
   muparser::muparser
