@@ -18,7 +18,7 @@ void Menu::Show() {
       //--------------FUNCTION AND AREA-------------
       ImGui::SeparatorText("FUNCTION AND AREA");
       // field for entering a function:
-      ImGui::Text("Function f(x, y):");
+      ImGui::Text("Function f(x, y, z):");
       // make text field use all width of menu
       ImGui::SetNextItemWidth(-1.0f);
       // ##_name that way we don't make label on the left side

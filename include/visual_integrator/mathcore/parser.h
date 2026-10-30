@@ -10,7 +10,7 @@ class ParserFunc {
   double var_x = 0, var_y = 0, var_z = 0;
 
   void ParseFunc(char* strFunc);
-  double Evaluate(double var_x, double var_y);
+  double Evaluate(double var_x, double var_y, double var_z);
 
   ParserFunc();
   ~ParserFunc() = default;
