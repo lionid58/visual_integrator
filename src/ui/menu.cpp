@@ -22,7 +22,7 @@ void Menu::Show() {
     ImGui::InputText("##func_input", strFunc, IM_COUNTOF(strFunc));
 
 	ImGui::Text("Ranges:");
-	ImGui::InputFloat2("(x)", xRange);
+    ImGui::InputFloat2("(x)", xRange);
     ImGui::InputFloat2("(y)", yRange);
     ImGui::InputFloat2("(z)", zRange);
 
@@ -30,17 +30,23 @@ void Menu::Show() {
     ImGui::SeparatorText("VOXEL GRID");
     ImGui::SetNextItemWidth(-1.0);
     ImGui::ProgressBar(-1.0f * (float)ImGui::GetTime(), 
-		ImVec2(0.0f, 0.0f), "In develop..");
+		ImVec2(0.0f, 0.0f), "In develop...");
 
 	//--------------ANIMATION PARAMS--------------
     ImGui::SeparatorText("ANIMATION PARAMETERS");
     ImGui::SetNextItemWidth(-1.0);
     ImGui::ProgressBar(-1.0f * (float)ImGui::GetTime(), 
-        ImVec2(0.0f, 0.0f), "In develop..");
+        ImVec2(0.0f, 0.0f), "In develop...");
 
 	//--------------DELETE LATER------------------
     ImGui::SeparatorText("DELETE LATER");
     ImGui::Checkbox("Demo window", &openDemoWind);
+
+    //--------------BUTTON------------------
+    if (ImGui::Button("start"))
+    {
+        startCalc = true;
+    }
 
     ImGui::End();
 }

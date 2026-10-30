@@ -5,13 +5,15 @@
 
 namespace visual_integrator{
 
-class Menu
-{
+
+class Menu{
  public:
   float xRange[2] = {-1.0f, 1.0f};
   float yRange[2] = {-1.0f, 1.0f};
   float zRange[2] = {-1.0f, 1.0f};
   char strFunc[128] = "";
+
+  bool startCalc = false;
 
   //ImGuiWindowFlags menu_flags = 0;
   //bool menu_open = true,
