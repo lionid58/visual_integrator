@@ -10,10 +10,10 @@ int run()
     Menu menu;
 	ParserFunc parser;
 
+	//glViewport(0, 0, framebuffer_width, framebuffer_height);
+	renderer.funcImage();
 	while (!window.should_close()) 
 	{
-		window.poll_events();
-       
 		// Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -34,6 +34,7 @@ int run()
 		}
 
 		window.swap_buffers();
+		window.poll_events();
 	}
 
 	return 0;
