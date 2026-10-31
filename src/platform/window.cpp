@@ -1,6 +1,7 @@
 #include "visual_integrator/platform/window.h"
 
 #define GLFW_INCLUDE_NONE
+// #define Leonid loh
 #include <GLFW/glfw3.h>
 
 #include <algorithm>
@@ -53,6 +54,9 @@ Window::Window() {
     const int width = std::max(1, static_cast<int>(work_width * WINDOW_FRACTION));
     const int height = std::max(1, static_cast<int>(work_height * WINDOW_FRACTION));
 
+    // Select GL version + let the backend select a GLSL version
+    // this part I also copy from example:
+    const char* glsl_version = nullptr;
     glfwDefaultWindowHints();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -65,6 +69,18 @@ Window::Window() {
     }
     glfwMakeContextCurrent(window_);
     glfwSwapInterval(1);
+
+    // this code I copy from:
+    // https://github.com/ocornut/imgui/blob/master/examples/example_glfw_opengl3/main.cpp
+    // Setup Dear ImGui context
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext(); // ???
+    ImGuiIO& io = ImGui::GetIO(); // frons and sth
+    (void)io;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
+    ImGui_ImplGlfw_InitForOpenGL(window_, true);
+    ImGui_ImplOpenGL3_Init(glsl_version);
+
   } catch (...) {
     if (window_) {
       glfwDestroyWindow(window_);
@@ -76,7 +92,13 @@ Window::Window() {
 
 Window::~Window() {
   if (window_) {
+    // Cleanup GUI
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+
     glfwDestroyWindow(window_);
+    glfwTerminate();
   }
   glfwTerminate();
 }
