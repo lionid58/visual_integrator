@@ -40,7 +40,8 @@ include(cmake/ClangFormat.cmake)
 if(VISUAL_INTEGRATOR_BUILD_TESTS)
   enable_testing()
   find_package(GTest CONFIG REQUIRED)
-  add_executable(unit_tests tests/smoke_test.cpp)
+  add_executable(unit_tests tests/smoke_test.cpp tests/marching_cubes_tables_test.cpp)
+  target_include_directories(unit_tests PRIVATE include)
   target_link_libraries(unit_tests PRIVATE
     GTest::gtest_main
     muparser::muparser
