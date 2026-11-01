@@ -54,7 +54,9 @@ if(VISUAL_INTEGRATOR_BUILD_TESTS)
       "-DCLANG_FORMAT_EXECUTABLE=${CLANG_FORMAT_EXECUTABLE}"
       -P "${PROJECT_SOURCE_DIR}/tests/format_targets_test.cmake")
   find_package(GTest CONFIG REQUIRED)
-  add_executable(unit_tests tests/smoke_test.cpp "src/mathcore/parser.cpp"  "include/visual_integrator/ui/lightMenu.h" "src/ui/lightMenu.cpp" "include/visual_integrator/ui/LightSettings.h")
+  add_executable(unit_tests tests/smoke_test.cpp tests/marching_cubes_tables_test.cpp
+    "src/mathcore/parser.cpp" "include/visual_integrator/ui/lightMenu.h"
+    "src/ui/lightMenu.cpp" "include/visual_integrator/ui/LightSettings.h")
   target_include_directories(unit_tests PRIVATE include)
   target_link_libraries(unit_tests PRIVATE
     GTest::gtest_main
