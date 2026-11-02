@@ -1,7 +1,7 @@
 #include "visual_integrator/platform/window.h"
 
 #define GLFW_INCLUDE_NONE
-// #define Leonid loh
+#define LEONID "loh"
 #include <GLFW/glfw3.h>
 
 #include <algorithm>

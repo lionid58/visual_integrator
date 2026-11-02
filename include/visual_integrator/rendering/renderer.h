@@ -7,25 +7,29 @@ namespace visual_integrator {
 
 class Renderer {
  public:
-  // Requires a current OpenGL context that outlives this renderer.
-  Renderer();
-  ~Renderer();
+	// Requires a current OpenGL context that outlives this renderer.
+	Renderer();
+	~Renderer();
 
-  void render_frame() const;
-  void SetSize(int framebuffer_width, int framebuffer_height);
+	void render_frame() const;
+	void SetSize(int framebuffer_width, int framebuffer_height);
 
-  void SetVideoData();
-  void BuildShader();
-  void BuildViewMatrixs();
-
+	void SetVideoData();
+	void BuildShader();
+	void BuildViewMatrixs();
+    void RotateObject(float delta_x, float delta_y);
 
   private:
-  /*
-  // VAO - ?
-  // VBO - vertices buffer object
-  // EBO - element buffer object
-  */
-  unsigned int VAO, VBO, EBO, shaderProgram;
-   int screenWidth, screenHeight, vertexCount = 0;
+	/*
+	// VAO - ?
+	// VBO - vertices buffer object
+	// EBO - element buffer object
+	*/
+	unsigned int VAO, VBO, EBO, shaderProgram;
+	int screenWidth, screenHeight, vertexCount = 0;
+ 	// матрица накопления вращения
+	glm::mat4 rotMatrix = glm::mat4(1.0f);
+
 };
+
 }  // namespace visual_integrator

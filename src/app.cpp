@@ -11,8 +11,8 @@ int run()
 	ParserFunc parser;
 
 	//glViewport(0, 0, framebuffer_width, framebuffer_height);
-        renderer.SetVideoData();
-        renderer.BuildShader();
+    renderer.SetVideoData();
+    renderer.BuildShader();
 	while (!window.should_close()) 
 	{
 		// Start the Dear ImGui frame
@@ -25,7 +25,15 @@ int run()
         const auto [width, height] = window.framebuffer_size();
         renderer.SetSize(width, height);
 
-        renderer.BuildViewMatrixs();
+        ImGuiIO& io = ImGui::GetIO();
+
+        // Если курсор в окне И зажата левая кнопка мыши
+        // да и по идее матрицы меняються только при движении мыши,
+        // так что перестраивать матрицы мы тоже будет здесь
+        if (!io.WantCaptureMouse && ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+          renderer.RotateObject(io.MouseDelta.x, io.MouseDelta.y);
+          renderer.BuildViewMatrixs();
+        }
         renderer.render_frame();
 
 		// этот ништяк нужен, чтобы рисовать UI
