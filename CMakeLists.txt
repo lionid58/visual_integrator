@@ -41,6 +41,13 @@ include(cmake/ClangFormat.cmake)
 
 if(VISUAL_INTEGRATOR_BUILD_TESTS)
   enable_testing()
+  add_test(NAME BuildTools.FormattingTargets
+    COMMAND "${CMAKE_COMMAND}"
+      "-DPROJECT_SOURCE=${PROJECT_SOURCE_DIR}"
+      "-DTEST_DIRECTORY=${PROJECT_BINARY_DIR}/format-targets-test"
+      "-DTEST_GENERATOR=${CMAKE_GENERATOR}"
+      "-DCLANG_FORMAT_EXECUTABLE=${CLANG_FORMAT_EXECUTABLE}"
+      -P "${PROJECT_SOURCE_DIR}/tests/format_targets_test.cmake")
   find_package(GTest CONFIG REQUIRED)
   add_executable(unit_tests tests/smoke_test.cpp "src/mathcore/parser.cpp")
   target_include_directories(unit_tests PRIVATE include)
