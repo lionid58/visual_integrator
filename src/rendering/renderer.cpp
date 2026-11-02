@@ -16,44 +16,93 @@ Renderer::Renderer() {
   if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress))) {
     throw std::runtime_error("Failed to load OpenGL");
   }
-}
 
-void Renderer::render_frame(int framebuffer_width, int framebuffer_height) const {
+  glEnable(GL_DEPTH_TEST);
+  /* так как функции GlGen... именно создают новые буферы
+  // их надо вынести в конструкто, а иначе при обновления массива vertex[]
+  // мы каждый раз будем генерить новый буфер, не удаляя старый
+  // в общем это нужно от утечек памяти
+  // 
+  // Да и обьяснения формата данных всегда одно и тоже,
+  // отчего это тоже будет здесь.
+  */
 
-  // тут мы назначаем окно 
-  glViewport(0, 0, framebuffer_width, framebuffer_height);
-  // я очень захотел сиреневое окно, оно крутое
-  glClearColor(42.0f / 255.0, 42.0f / 255.0, 53.0f / 255, 1.0f);
-  // и отчищаем цвета
-  glClear(GL_COLOR_BUFFER_BIT);
-  glBindVertexArray(VAO);
-  glDrawArrays(GL_TRIANGLES, 0, 3);
-}
-
-int Renderer::funcImage()
-{
-  float vertices[] = {
-      // positions          // colors
-      0.5f,  -0.5f, 0.0f, 1.0f, 0.0f, 0.0f,  // bottom right
-      -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,  // bottom left
-      0.0f,  0.5f,  0.0f, 0.0f, 0.0f, 1.0f   // top
-  };
-
-  // vertex array
+  // glGenVertexArrays — generate vertex array object names
   glGenVertexArrays(1, &VAO);
   glBindVertexArray(VAO);
 
-  // vertex buffer
+  // glGenBuffers — generate buffer object names
   glGenBuffers(1, &VBO);
   glBindBuffer(GL_ARRAY_BUFFER, VBO);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+  glGenBuffers(1, &EBO);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+  // далее мы обьясняем видеокарте что значат переданные файлы:
+  // ---первые три числа это КООРДИНАТЫ В ПРОСТРАНСТВЧЕ
+  // ---оставшиеся это цвет
   // position
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
   glEnableVertexAttribArray(0);
   // color
   glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
   glEnableVertexAttribArray(1);
+}
 
+void Renderer::render_frame() const {
+
+  // тут мы назначаем окно 
+  glViewport(0, 0, screenWidth, screenHeight);
+  // я очень захотел сиреневое окно, оно крутое
+  glClearColor(42.0f / 255.0, 42.0f / 255.0, 53.0f / 255, 1.0f);
+  // и отчищаем цвета
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+  glBindVertexArray(VAO);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+
+  glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, 0);
+}
+
+void Renderer::SetSize(int framebuffer_width, int framebuffer_height) {
+  screenWidth = framebuffer_width;
+  screenHeight = framebuffer_height;
+}
+
+void Renderer::SetVideoData() {
+
+    //этот массив позже станет изменяемым по нажатию кнопки "start"
+    float vertices[] = {
+        // positions          // colors
+        -0.5f, -0.5f, -0.5f, 1.0f, 1.0f,  0.0f,
+        -0.5f, -0.5f, 0.5f,  1.0f, 0.0f,  0.0f,
+        -0.5f, 0.5f, -0.5f,  0.0f, 0.0f,  1.0f,
+        -0.5f, 0.5f,  0.5f,  0.0f, 1.0f,  0.0f, 
+        0.5f,  -0.5f, -0.5f, 0.0f, 1.0f,  0.0f,
+        0.5f,  -0.5f, 0.5f,  0.0f, 0.0f,  1.0f,  
+        0.5f,  0.5f,  -0.5f, 1.0f, 0.0f,  0.0f,  
+        0.5f,  0.5f,  0.5f,  1.0f, 1.0f,  0.0f
+    };
+
+    unsigned int indices[] = {
+        0, 1, 4, 1, 5, 4,
+        2, 7, 3, 2, 6, 7,
+        0, 6, 2, 0, 4, 6,
+        1, 3, 7, 1, 5, 7,
+        0, 2, 3, 0, 3, 1,
+        4, 7, 6, 4, 5, 7
+    };
+    vertexCount = sizeof(indices);
+
+    // эти строки передают данные на видеокарту
+    // это вершины в локальных координатах
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    // это индесы вершин, чтобы в массиве вершин были только уникальные
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+}
+
+void Renderer::BuildShader() {
+
+  // подключения шейдеров к графическому конвейру:
   // read shaders
   std::string vertexCode;
   std::string fragmentCode;
@@ -68,6 +117,8 @@ int Renderer::funcImage()
     fShaderFile.open("shaders/shader.frag");
     std::stringstream vShaderStream, fShaderStream;
     // read file’s buffer contents into streams
+    // здесь мы просто специфически читаем файл
+    // (read buffer) возвращает указатель на внутренний низкоуровневый буфер открытого файла
     vShaderStream << vShaderFile.rdbuf();
     fShaderStream << fShaderFile.rdbuf();
     // close file handlers
@@ -83,7 +134,7 @@ int Renderer::funcImage()
   const char* fShaderCode = fragmentCode.c_str();
 
   // create vertex shader
-  vertexShader = glCreateShader(GL_VERTEX_SHADER);
+  unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
   int success;
   char infoLog[512];
   glShaderSource(vertexShader, 1, &vShaderCode, NULL);
@@ -96,7 +147,7 @@ int Renderer::funcImage()
   };
 
   // create fragment shader
-  fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+  unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
   glShaderSource(fragmentShader, 1, &fShaderCode, NULL);
   glCompileShader(fragmentShader);
   // print compile errors if any
@@ -121,15 +172,38 @@ int Renderer::funcImage()
   glDeleteShader(vertexShader);
   glDeleteShader(fragmentShader);
   glUseProgram(shaderProgram);
-  
-  std::cout << "well\n";
-  return 0;
+
+}
+
+void Renderer::BuildViewMatrixs(){
+
+    glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 1.0f);
+    glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+    glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+
+    glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -2.0f));
+    model *= glm::rotate(glm::mat4(1.0f), (float)glfwGetTime(), glm::vec3(1.0f, 0.0f, 0.0f));
+
+    glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+
+    glm::mat4 proj = 
+        glm::perspective(glm::radians(70.0f), (float)screenWidth / screenHeight, 0.1f, 100.0f);
+
+    int uni_model = glGetUniformLocation(shaderProgram, "model");
+    int uni_view = glGetUniformLocation(shaderProgram, "view");
+    int uni_proj = glGetUniformLocation(shaderProgram, "proj");
+
+    glUniformMatrix4fv(uni_model, 1, GL_FALSE, glm::value_ptr(model));
+    glUniformMatrix4fv(uni_view, 1, GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(uni_proj, 1, GL_FALSE, glm::value_ptr(proj));
 }
 
 Renderer::~Renderer()
 {
   glDeleteVertexArrays(1, &VAO);
   glDeleteBuffers(1, &VBO);
+  glDeleteBuffers(1, &EBO);
   glDeleteProgram(shaderProgram);
 }
+
 }  // namespace visual_integrator
