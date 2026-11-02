@@ -2,8 +2,16 @@ find_program(CLANG_FORMAT_EXECUTABLE NAMES clang-format REQUIRED)
 
 file(GLOB_RECURSE FORMAT_SOURCES CONFIGURE_DEPENDS
      "${PROJECT_SOURCE_DIR}/src/*.cpp"
+     "${PROJECT_SOURCE_DIR}/src/*.cc"
      "${PROJECT_SOURCE_DIR}/src/*.h"
+     "${PROJECT_SOURCE_DIR}/src/*.hh"
+     "${PROJECT_SOURCE_DIR}/include/*.cpp"
      "${PROJECT_SOURCE_DIR}/include/*.h"
+     "${PROJECT_SOURCE_DIR}/include/*.cc"
+     "${PROJECT_SOURCE_DIR}/include/*.hh"
+     "${PROJECT_SOURCE_DIR}/tests/*.cc"
+     "${PROJECT_SOURCE_DIR}/tests/*.h"
+     "${PROJECT_SOURCE_DIR}/tests/*.hh"
      "${PROJECT_SOURCE_DIR}/tests/*.cpp")
 
 add_custom_target(format
