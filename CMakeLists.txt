@@ -21,7 +21,7 @@ add_executable(visual_integrator
   src/rendering/renderer.cpp
   src/ui/menu.cpp 
   src/mathcore/parser.cpp
-  src/visualization/voxel.cc  "include/visual_integrator/ui/lightMenu.h" "src/ui/lightMenu.cpp" "include/visual_integrator/ui/LightSettings.h")
+  src/visualization/marching_cubes.cc  "include/visual_integrator/ui/lightMenu.h" "src/ui/lightMenu.cpp" "include/visual_integrator/ui/LightSettings.h")
 add_custom_command(TARGET visual_integrator POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_directory
   "${CMAKE_SOURCE_DIR}/src/rendering/shaders"
