@@ -15,8 +15,10 @@ Renderer::Renderer() {
   if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress))) {
     throw std::runtime_error("Failed to load OpenGL");
   }
-
+  // эта строка отвечает за обработку глубины
   glEnable(GL_DEPTH_TEST);
+  // обработка мыши находиться в window.cpp
+
   /* так как функции GlGen... именно создают новые буферы
   // их надо вынести в конструкто, а иначе при обновления массива vertex[]
   // мы каждый раз будем генерить новый буфер, не удаляя старый
@@ -69,7 +71,7 @@ void Renderer::SetSize(int framebuffer_width, int framebuffer_height) {
 
 void Renderer::SetVideoData() {
   // этот массив позже станет изменяемым по нажатию кнопки "start"
-  float vertices[] = {// positions          // colors
+  float vertices[] = {// positions         // colors
                       -0.5f, -0.5f, -0.5f, 1.0f, 1.0f,  0.0f, -0.5f, -0.5f,
                       0.5f,  1.0f,  0.0f,  0.0f, -0.5f, 0.5f, -0.5f, 0.0f,
                       0.0f,  1.0f,  -0.5f, 0.5f, 0.5f,  0.0f, 1.0f,  0.0f,
@@ -88,6 +90,9 @@ void Renderer::SetVideoData() {
   // это индесы вершин, чтобы в массиве вершин были только уникальные
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices,
                GL_STATIC_DRAW);
+
+  // для красоты добавим оси координат (как у всех нормальных людей)
+  // в правый верхний угол
 }
 
 void Renderer::BuildShader() {
@@ -174,13 +179,12 @@ void Renderer::BuildViewMatrixs() {
 
   glm::mat4 model =
       glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -2.0f));
-  model *= glm::rotate(glm::mat4(1.0f), (float)glfwGetTime(),
-                       glm::vec3(1.0f, 0.0f, 0.0f));
+  model *= rotMatrix;
 
   glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 
   glm::mat4 proj = glm::perspective(
-      glm::radians(70.0f), (float)screenWidth / screenHeight, 0.1f, 100.0f);
+      glm::radians(50.0f), (float)screenWidth / screenHeight, 0.1f, 100.0f);
 
   int uni_model = glGetUniformLocation(shaderProgram, "model");
   int uni_view = glGetUniformLocation(shaderProgram, "view");
@@ -189,6 +193,16 @@ void Renderer::BuildViewMatrixs() {
   glUniformMatrix4fv(uni_model, 1, GL_FALSE, glm::value_ptr(model));
   glUniformMatrix4fv(uni_view, 1, GL_FALSE, glm::value_ptr(view));
   glUniformMatrix4fv(uni_proj, 1, GL_FALSE, glm::value_ptr(proj));
+}
+
+void Renderer::RotateObject(float deltaX, float deltaY) {
+  const float sensitivity = 0.005f;
+  glm::mat4 delta_rot = glm::mat4(1.0f);
+  delta_rot =
+      glm::rotate(delta_rot, deltaX * sensitivity, glm::vec3(0.0f, 1.0f, 0.0f));
+  delta_rot =
+      glm::rotate(delta_rot, deltaY * sensitivity, glm::vec3(1.0f, 0.0f, 0.0f));
+  rotMatrix = delta_rot * rotMatrix;
 }
 
 Renderer::~Renderer() {
