@@ -5,6 +5,7 @@ namespace visual_integrator {
 
 int run() 
 {
+    bool frameChange = true;
 	Window window;
 	Renderer renderer;
     Menu menu;
@@ -19,21 +20,38 @@ int run()
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
+
+		ImGuiIO& io = ImGui::GetIO();
+
+        // Если курсор в окне И зажата левая кнопка мыши
+        // да и по идее матрицы меняються только при движении мыши,
+        // так что перестраивать матрицы мы тоже будет здесь
+        if (!io.WantCaptureMouse)
+        {
+            if (ImGui::IsMouseDown(ImGuiMouseButton_Left))
+            {
+                renderer.RotateObject(io.MouseDelta.x, io.MouseDelta.y);
+                frameChange = true;
+            }
+            if (io.MouseWheel != 0)
+            {
+                renderer.ZoomObject(io.MouseWheel);
+                frameChange = true;
+            }
+        }
+
         menu.Show();
         ImGui::Render();
 
         const auto [width, height] = window.framebuffer_size();
         renderer.SetSize(width, height);
 
-        ImGuiIO& io = ImGui::GetIO();
-
-        // Если курсор в окне И зажата левая кнопка мыши
-        // да и по идее матрицы меняються только при движении мыши,
-        // так что перестраивать матрицы мы тоже будет здесь
-        if (!io.WantCaptureMouse && ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
-          renderer.RotateObject(io.MouseDelta.x, io.MouseDelta.y);
-          renderer.BuildViewMatrixs();
+        if (frameChange)
+        {
+            renderer.BuildViewMatrixs();
+            frameChange = false;
         }
+
         renderer.render_frame();
 
 		// этот ништяк нужен, чтобы рисовать UI

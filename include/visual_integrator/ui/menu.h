@@ -5,7 +5,6 @@
 
 namespace visual_integrator{
 
-
 class Menu{
  public:
   float xRange[2] = {-1.0f, 1.0f};

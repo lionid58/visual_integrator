@@ -48,6 +48,44 @@ Renderer::Renderer() {
   // color
   glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
   glEnableVertexAttribArray(1);
+
+  InitAxes();
+}
+
+void Renderer::InitAxes() {
+  float axesVertices[] = {
+        // Ось X
+        0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 
+        1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+
+        // Ось Y
+        0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 
+        0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+
+        // Ось Z
+        0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 
+        0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f
+  };
+
+  glGenVertexArrays(1, &axes_VAO);
+  glBindVertexArray(axes_VAO);
+
+  // glGenBuffers — generate buffer object names
+  glGenBuffers(1, &axes_VBO);
+  glBindBuffer(GL_ARRAY_BUFFER, axes_VBO);
+  // эти строки передают данные на видеокарту
+  // это вершины в локальных координатах
+  glBufferData(GL_ARRAY_BUFFER, sizeof(axesVertices), axesVertices, GL_STATIC_DRAW);
+
+  // далее мы обьясняем видеокарте что значат переданные файлы:
+  // ---первые три числа это КООРДИНАТЫ В ПРОСТРАНСТВЧЕ
+  // ---оставшиеся это цвет
+  // position
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+  glEnableVertexAttribArray(0);
+  // color
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+  glEnableVertexAttribArray(1);
 }
 
 void Renderer::render_frame() const {
@@ -58,11 +96,25 @@ void Renderer::render_frame() const {
   glClearColor(42.0f / 255.0, 42.0f / 255.0, 53.0f / 255, 1.0f);
   // и отчищаем цвета
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glUseProgram(shaderProgram);
 
+  // эта строка ищет строку MVP в таблице шейдеров, чтобы туда отправить
+  // матрицы, так как эта строка одинакова, то будем искать её один раз
+  int uni_MVP = glGetUniformLocation(shaderProgram, "MVP");
+
+  // рисуем основную штуку:
+  // отправляем нужные матрицы
+  glUniformMatrix4fv(uni_MVP, 1, GL_FALSE, glm::value_ptr(main_MVP));
+  // рисуем
   glBindVertexArray(VAO);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-
   glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, 0);
+
+  // рисуем оси:
+  // отправляем нужные матрицы
+  glUniformMatrix4fv(uni_MVP, 1, GL_FALSE, glm::value_ptr(axes_MVP));
+  // рисуем
+  RenderAxes();
 }
 
 void Renderer::SetSize(int framebuffer_width, int framebuffer_height) {
@@ -81,7 +133,7 @@ void Renderer::SetVideoData() {
         -0.5f, 0.5f,  0.5f,  0.0f, 1.0f,  0.0f, 
         0.5f,  -0.5f, -0.5f, 0.0f, 1.0f,  0.0f,
         0.5f,  -0.5f, 0.5f,  0.0f, 0.0f,  1.0f,  
-        0.5f,  0.5f,  -0.5f, 1.0f, 0.0f,  0.0f,  
+        0.5f,  0.5f,  -0.5f, 1.0f, 0.0f,  0.0f,   
         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,  0.0f
     };
 
@@ -93,17 +145,20 @@ void Renderer::SetVideoData() {
         0, 2, 3, 0, 3, 1,
         4, 7, 6, 4, 5, 7
     };
-    vertexCount = sizeof(indices);
+
+    vertexCount = 36;
 
     // эти строки передают данные на видеокарту
     // это вершины в локальных координатах
+    glBindVertexArray(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
     // это индесы вершин, чтобы в массиве вершин были только уникальные
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
     // для красоты добавим оси координат (как у всех нормальных людей)
     // в правый верхний угол
-
 }
 
 void Renderer::BuildShader() {
@@ -178,30 +233,32 @@ void Renderer::BuildShader() {
   glDeleteShader(vertexShader);
   glDeleteShader(fragmentShader);
   glUseProgram(shaderProgram);
-
 }
 
 void Renderer::BuildViewMatrixs(){
 
+    // --------------MAIN MATRIX-----------------
     glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 1.0f);
     glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
     glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
-    glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -2.0f));
-    model *= rotMatrix;
+    glm::mat4 mainModel = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -distance));
+    mainModel *= rotMatrix;
 
-    glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+    glm::mat4 mainView = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 
-    glm::mat4 proj = 
-        glm::perspective(glm::radians(50.0f), (float)screenWidth / screenHeight, 0.1f, 100.0f);
+    glm::mat4 mainProj = 
+        glm::perspective(glm::radians(60.0f), (float)screenWidth / screenHeight, 0.1f, 100.0f);
+    main_MVP = mainProj * mainView * mainModel;
 
-    int uni_model = glGetUniformLocation(shaderProgram, "model");
-    int uni_view = glGetUniformLocation(shaderProgram, "view");
-    int uni_proj = glGetUniformLocation(shaderProgram, "proj");
+    // -----------------AXES MATRIX------------------
 
-    glUniformMatrix4fv(uni_model, 1, GL_FALSE, glm::value_ptr(model));
-    glUniformMatrix4fv(uni_view, 1, GL_FALSE, glm::value_ptr(view));
-    glUniformMatrix4fv(uni_proj, 1, GL_FALSE, glm::value_ptr(proj));
+    //glm::mat4 axesModel = rotMatrix;
+    glm::mat4 axesView = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.0f), 
+                                     glm::vec3(0.0f, 0.0f, -1.0f),
+                                     glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 axesProj = glm::ortho(-1.5f, 1.5f, -1.5f, 1.5f, 0.1f, 10.0f);
+    axes_MVP = axesProj * axesView * rotMatrix;
 }
 
 void Renderer::RotateObject(float deltaX, float deltaY) {
@@ -212,11 +269,36 @@ void Renderer::RotateObject(float deltaX, float deltaY) {
   rotMatrix = delta_rot * rotMatrix;
 }
 
+void Renderer::ZoomObject(float delta_z) {
+  float zoomSpeed = 0.2f;
+  distance += zoomSpeed * delta_z;
+
+  if (distance < 0.5) distance = 0.5;
+}
+
+void Renderer::RenderAxes() const{
+    // размер квадрата под оси
+    const int axesSize = 120;
+    // отступ слева
+    const int paddingleft = 15;
+
+    glViewport(screenWidth - axesSize - paddingleft, 
+        screenHeight - axesSize - paddingleft,
+        axesSize, axesSize);
+
+    glClear(GL_DEPTH_BUFFER_BIT);
+
+    glBindVertexArray(axes_VAO);
+    glDrawArrays(GL_LINES, 0, 6);
+}
+
 Renderer::~Renderer()
 {
   glDeleteVertexArrays(1, &VAO);
   glDeleteBuffers(1, &VBO);
   glDeleteBuffers(1, &EBO);
+  glDeleteVertexArrays(1, &axes_VAO);
+  glDeleteBuffers(1, &axes_VBO);
   glDeleteProgram(shaderProgram);
 }
 

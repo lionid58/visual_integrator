@@ -18,6 +18,7 @@ class Renderer {
 	void BuildShader();
 	void BuildViewMatrixs();
     void RotateObject(float delta_x, float delta_y);
+    void ZoomObject(float delta_z);
 
   private:
 	/*
@@ -26,10 +27,18 @@ class Renderer {
 	// EBO - element buffer object
 	*/
 	unsigned int VAO, VBO, EBO, shaderProgram;
+	// это для осей координат
+	unsigned int axes_VAO, axes_VBO;
 	int screenWidth, screenHeight, vertexCount = 0;
  	// матрица накопления вращения
 	glm::mat4 rotMatrix = glm::mat4(1.0f);
+	//
+	glm::mat4 main_MVP, axes_MVP;
+	// расстояние от камеры
+	float distance = 2.0f;
 
+	void InitAxes();
+    void RenderAxes() const;
 };
 
 }  // namespace visual_integrator
