@@ -1,4 +1,5 @@
 #include "visual_integrator/app.h"
+
 #include "visual_integrator/mathcore/parser.h"
 
 namespace visual_integrator {

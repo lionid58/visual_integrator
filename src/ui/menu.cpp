@@ -10,7 +10,14 @@ void Menu::Show() {
   // and set constant wight
   ImGui::SetNextWindowPos(viewport->WorkPos);
   ImGui::SetNextWindowSize(ImVec2(300, viewport->WorkSize.y));
+  // здесь мы узнаём параметры окна
+  const ImGuiViewport* viewport = ImGui::GetMainViewport();
+  // Set menu window on the loeft side
+  // and set constant wight
+  ImGui::SetNextWindowPos(viewport->WorkPos);
+  ImGui::SetNextWindowSize(ImVec2(300, viewport->WorkSize.y));
 
+  ImGui::Begin("Menu");
   ImGui::Begin("Menu");
 
   if (ImGui::BeginTabBar("MainTabBar")) {
@@ -24,6 +31,10 @@ void Menu::Show() {
       // ##_name that way we don't make label on the left side
       ImGui::InputText("##func_input", strFunc, IM_COUNTOF(strFunc));
 
+      ImGui::Text("Ranges:");
+      ImGui::InputFloat2("(x)", xRange);
+      ImGui::InputFloat2("(y)", yRange);
+      ImGui::InputFloat2("(z)", zRange);
       ImGui::Text("Ranges:");
       ImGui::InputFloat2("(x)", xRange);
       ImGui::InputFloat2("(y)", yRange);
@@ -60,6 +71,11 @@ void Menu::Show() {
     ImGui::EndTabBar();
   }
   ImGui::End();
+  ImGui::EndTabItem();
+}
+ImGui::EndTabBar();
+}
+ImGui::End();
 }
 
 void Menu::HelpMarker(const char* desc) {

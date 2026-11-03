@@ -23,7 +23,7 @@ struct Grid {
 #include <vector>
 #include <functional>
 #include <glm/vec3.hpp>
-
+#include <vector>
 
 namespace visual_integrator {
 
@@ -51,13 +51,13 @@ double ParserFunc::Evaluate(double x, double y, double z) {
 }
 
 
-    struct Grid {
-        glm::dvec3 step;
-        glm::dvec3 origin;
-        glm::uvec3 dimensions;
+struct Grid {
+  glm::dvec3 step;
+  glm::dvec3 origin;
+  glm::uvec3 dimensions;
 
-        std::vector<double> valuse;
-        std::vector<Location> locations;
+  std::vector<double> valuse;
+  std::vector<Location> locations;
 
         Grid::Grid(glm::dvec3 steps, glm::dvec3 origin_of_area, 
             glm::dvec3 area_sizes, std::function<double(glm::dvec3)> impSurfFunc);

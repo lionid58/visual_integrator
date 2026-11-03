@@ -24,6 +24,7 @@ Renderer::Renderer() {
   // мы каждый раз будем генерить новый буфер, не удаляя старый
   // в общем это нужно от утечек памяти
   //
+  //
   // Да и обьяснения формата данных всегда одно и тоже,
   // отчего это тоже будет здесь.
   */
@@ -38,42 +39,6 @@ Renderer::Renderer() {
 
   glGenBuffers(1, &EBO);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-  // далее мы обьясняем видеокарте что значат переданные файлы:
-  // ---первые три числа это КООРДИНАТЫ В ПРОСТРАНСТВЧЕ
-  // ---оставшиеся это цвет
-  // position
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-  glEnableVertexAttribArray(0);
-  // color
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float),
-                        (void*)(3 * sizeof(float)));
-  glEnableVertexAttribArray(1);
-
-  InitAxes();
-}
-
-void Renderer::InitAxes() {
-  float axesVertices[] = {
-      // Ось X
-      0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
-
-      // Ось Y
-      0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-
-      // Ось Z
-      0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f};
-
-  glGenVertexArrays(1, &axes_VAO);
-  glBindVertexArray(axes_VAO);
-
-  // glGenBuffers — generate buffer object names
-  glGenBuffers(1, &axes_VBO);
-  glBindBuffer(GL_ARRAY_BUFFER, axes_VBO);
-  // эти строки передают данные на видеокарту
-  // это вершины в локальных координатах
-  glBufferData(GL_ARRAY_BUFFER, sizeof(axesVertices), axesVertices,
-               GL_STATIC_DRAW);
-
   // далее мы обьясняем видеокарте что значат переданные файлы:
   // ---первые три числа это КООРДИНАТЫ В ПРОСТРАНСТВЧЕ
   // ---оставшиеся это цвет
@@ -229,7 +194,121 @@ void Renderer::InitAxes() {
       0.0f,
       1.0f,
       0.0f,
+      // Ось Y
+      0.0f,
+      0.0f,
+      0.0f,
+      0.0f,
+      1.0f,
+      0.0f,
+      0.0f,
+      1.0f,
+      0.0f,
+      0.0f,
+      1.0f,
+      0.0f,
+      // стрелочки
+      0.0f,
+      1.0f,
+      0.0f,
+      0.0f,
+      1.0f,
+      0.0f,
+      0.2f,
+      0.8f,
+      0.0f,
+      0.0f,
+      1.0f,
+      0.0f,
+      0.0f,
+      1.0f,
+      0.0f,
+      0.0f,
+      1.0f,
+      0.0f,
+      -0.2f,
+      0.8f,
+      0.0f,
+      0.0f,
+      1.0f,
+      0.0f,
+      // буковка
+      0.0f,
+      1.10f,
+      0.0f,
+      0.0f,
+      1.0f,
+      0.0f,
+      0.0f,
+      1.25f,
+      0.0f,
+      0.0f,
+      1.0f,
+      0.0f,
+      0.0f,
+      1.25f,
+      0.0f,
+      0.0f,
+      1.0f,
+      0.0f,
+      -0.1f,
+      1.40f,
+      0.0f,
+      0.0f,
+      1.0f,
+      0.0f,
+      0.0f,
+      1.25f,
+      0.0f,
+      0.0f,
+      1.0f,
+      0.0f,
+      0.1f,
+      1.40f,
+      0.0f,
+      0.0f,
+      1.0f,
+      0.0f,
 
+      // Ось Z
+      0.0f,
+      0.0f,
+      0.0f,
+      0.0f,
+      0.0f,
+      1.0f,
+      0.0f,
+      0.0f,
+      1.0f,
+      0.0f,
+      0.0f,
+      1.0f,
+      // стрелочки
+      0.0f,
+      0.0f,
+      1.0f,
+      0.0f,
+      0.0f,
+      1.0f,
+      0.0f,
+      0.2f,
+      0.8f,
+      0.0f,
+      0.0f,
+      1.0f,
+      0.0f,
+      0.0f,
+      1.0f,
+      0.0f,
+      0.0f,
+      1.0f,
+      0.0f,
+      -0.2f,
+      0.8f,
+      0.0f,
+      0.0f,
+      1.0f,
+      // буковки не будет
       // Ось Z
       0.0f,
       0.0f,
@@ -465,6 +544,7 @@ void Renderer::BuildViewMatrixs() {
   main_MVP = mainProj * mainView * mainModel;
 
   // -----------------AXES MATRIX------------------
+  // -----------------AXES MATRIX------------------
 
   // glm::mat4 axesModel = rotMatrix;
   glm::mat4 axesView =
@@ -501,7 +581,11 @@ void Renderer::RenderAxes() const {
              screenHeight - axesSize - paddingleft, axesSize, axesSize);
 
   glClear(GL_DEPTH_BUFFER_BIT);
+  glClear(GL_DEPTH_BUFFER_BIT);
 
+  glBindVertexArray(axes_VAO);
+  glLineWidth(3.0);
+  glDrawArrays(GL_LINES, 0, 28);
   glBindVertexArray(axes_VAO);
   glLineWidth(3.0);
   glDrawArrays(GL_LINES, 0, 28);
