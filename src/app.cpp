@@ -1,42 +1,40 @@
 #include "visual_integrator/app.h"
+
 #include "visual_integrator/mathcore/parser.h"
 
 namespace visual_integrator {
 
-int run() 
-{
-	Window window;
-	Renderer renderer;
-    Menu menu;
-	ParserFunc parser;
+int run() {
+  Window window;
+  Renderer renderer;
+  Menu menu;
+  ParserFunc parser;
 
-	while (!window.should_close()) 
-	{
-		window.poll_events();
-       
-		// Start the Dear ImGui frame
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-		menu.Show();
-		ImGui::Render();
+  while (!window.should_close()) {
+    window.poll_events();
 
-		const auto [width, height] = window.framebuffer_size();
-		renderer.render_frame(width, height);
+    // Start the Dear ImGui frame
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+    menu.Show();
+    ImGui::Render();
 
-		// этот ништяк нужен, чтобы рисовать UI
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    const auto [width, height] = window.framebuffer_size();
+    renderer.render_frame(width, height);
 
-		if (menu.startCalc)
-		{
-          parser.ParseFunc(menu.strFunc);
-          menu.startCalc = false;
-		}
+    // этот ништяк нужен, чтобы рисовать UI
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-		window.swap_buffers();
-	}
+    if (menu.startCalc) {
+      parser.ParseFunc(menu.strFunc);
+      menu.startCalc = false;
+    }
 
-	return 0;
+    window.swap_buffers();
+  }
+
+  return 0;
 }
 
 }  // namespace visual_integrator

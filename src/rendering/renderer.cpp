@@ -15,7 +15,7 @@ Renderer::Renderer() {
 }
 
 void Renderer::render_frame(int framebuffer_width, int framebuffer_height) const {
-  // тут мы назначаем окно 
+  // тут мы назначаем окно
   glViewport(0, 0, framebuffer_width, framebuffer_height);
   // я очень захотел сиреневое окно, оно крутое
   glClearColor(42.0f / 255.0, 42.0f / 255.0, 53.0f / 255, 1.0f);

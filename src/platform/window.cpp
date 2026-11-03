@@ -74,8 +74,8 @@ Window::Window() {
     // https://github.com/ocornut/imgui/blob/master/examples/example_glfw_opengl3/main.cpp
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
-    ImGui::CreateContext(); // ???
-    ImGuiIO& io = ImGui::GetIO(); // frons and sth
+    ImGui::CreateContext();        // ???
+    ImGuiIO& io = ImGui::GetIO();  // frons and sth
     (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
     ImGui_ImplGlfw_InitForOpenGL(window_, true);

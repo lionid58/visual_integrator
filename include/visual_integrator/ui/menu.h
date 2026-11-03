@@ -3,10 +3,9 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 
-namespace visual_integrator{
+namespace visual_integrator {
 
-
-class Menu{
+class Menu {
  public:
   float xRange[2] = {-1.0f, 1.0f};
   float yRange[2] = {-1.0f, 1.0f};
@@ -15,17 +14,16 @@ class Menu{
 
   bool startCalc = false;
 
-  //ImGuiWindowFlags menu_flags = 0;
-  //bool menu_open = true,
+  // ImGuiWindowFlags menu_flags = 0;
+  // bool menu_open = true,
   bool openDemoWind = false;
 
   Menu() = default;
   ~Menu() = default;
   void Show();
 
-  private:
+ private:
   static void HelpMarker(const char* desc);
 };
 
 }  // namespace visual_integrator
-
