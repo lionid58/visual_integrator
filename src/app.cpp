@@ -1,14 +1,17 @@
 #include "visual_integrator/app.h"
-#include "visual_integrator/mathcore/parser.h"
 
 namespace visual_integrator {
 
 int run() 
 {
     bool frameChange = true;
+    LightSettings globalLightsettings;
+
 	Window window;
 	Renderer renderer;
+    renderer.SetLightData(&globalLightsettings);
     Menu menu;
+    menu.lightmenu.SetLightData(&globalLightsettings);
 	ParserFunc parser;
 
 	//glViewport(0, 0, framebuffer_width, framebuffer_height);

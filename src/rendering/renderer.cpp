@@ -117,7 +117,6 @@ void Renderer::InitAxes() {
 }
 
 void Renderer::render_frame() const {
-
   // тут мы назначаем окно 
   glViewport(0, 0, screenWidth, screenHeight);
   // я очень захотел сиреневое окно, оно крутое
@@ -129,6 +128,8 @@ void Renderer::render_frame() const {
   // эта строка ищет строку MVP в таблице шейдеров, чтобы туда отправить
   // матрицы, так как эта строка одинакова, то будем искать её один раз
   int uni_MVP = glGetUniformLocation(shaderProgram, "MVP");
+ 
+  
 
   // рисуем основную штуку:
   // отправляем нужные матрицы
@@ -138,59 +139,53 @@ void Renderer::render_frame() const {
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
   glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, 0);
 
-  // рисуем оси:
-  // отправляем нужные матрицы
-  glUniformMatrix4fv(uni_MVP, 1, GL_FALSE, glm::value_ptr(axes_MVP));
-  // рисуем
-  RenderAxes();
+  RenderLightGame();
+  
+  if (!localLightsettings->lightgame) {
+    // рисуем оси:
+    // отправляем нужные матрицы
+    glUniformMatrix4fv(uni_MVP, 1, GL_FALSE, glm::value_ptr(axes_MVP));
+    // рисуем
+    RenderAxes();
+  }
 }
 
 void Renderer::SetSize(int framebuffer_width, int framebuffer_height) {
   screenWidth = framebuffer_width;
   screenHeight = framebuffer_height;
 }
-
+void Renderer::SetDefoultPos() {
+  rotMatrix = glm::mat4(1.0f);
+  distance = 2.0f;
+}
+void Renderer::SetLightData(LightSettings* light) { localLightsettings = light; };
 void Renderer::SetVideoData() {
+  // этот массив позже станет изменяемым по нажатию кнопки "start"
+  float vertices[] = {// positions         // colors
+                      -0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 0.0f, -0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 0.0f,
+                      -0.5f, 0.5f,  -0.5f, 0.0f, 0.0f, 1.0f, -0.5f, 0.5f,  0.5f, 0.0f, 1.0f, 0.0f,
+                      0.5f,  -0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.5f,  -0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
+                      0.5f,  0.5f,  -0.5f, 1.0f, 0.0f, 0.0f, 0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 0.0f};
 
-    //этот массив позже станет изменяемым по нажатию кнопки "start"
-    float vertices[] = {
-        // positions         // colors
-        -0.5f, -0.5f, -0.5f, 1.0f, 1.0f,  0.0f,
-        -0.5f, -0.5f, 0.5f,  1.0f, 0.0f,  0.0f,
-        -0.5f, 0.5f, -0.5f,  0.0f, 0.0f,  1.0f,
-        -0.5f, 0.5f,  0.5f,  0.0f, 1.0f,  0.0f, 
-        0.5f,  -0.5f, -0.5f, 0.0f, 1.0f,  0.0f,
-        0.5f,  -0.5f, 0.5f,  0.0f, 0.0f,  1.0f,  
-        0.5f,  0.5f,  -0.5f, 1.0f, 0.0f,  0.0f,   
-        0.5f,  0.5f,  0.5f,  1.0f, 1.0f,  0.0f
-    };
+  unsigned int indices[] = {0, 1, 4, 1, 5, 4, 2, 7, 3, 2, 6, 7, 0, 6, 2, 0, 4, 6,
+                            1, 3, 7, 1, 5, 7, 0, 2, 3, 0, 3, 1, 4, 7, 6, 4, 5, 7};
 
-    unsigned int indices[] = {
-        0, 1, 4, 1, 5, 4,
-        2, 7, 3, 2, 6, 7,
-        0, 6, 2, 0, 4, 6,
-        1, 3, 7, 1, 5, 7,
-        0, 2, 3, 0, 3, 1,
-        4, 7, 6, 4, 5, 7
-    };
+  vertexCount = 36;
 
-    vertexCount = 36;
+  // эти строки передают данные на видеокарту
+  // это вершины в локальных координатах
+  glBindVertexArray(VAO);
+  glBindBuffer(GL_ARRAY_BUFFER, VBO);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+  // это индесы вершин, чтобы в массиве вершин были только уникальные
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-    // эти строки передают данные на видеокарту
-    // это вершины в локальных координатах
-    glBindVertexArray(VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    // это индесы вершин, чтобы в массиве вершин были только уникальные
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-    // для красоты добавим оси координат (как у всех нормальных людей)
-    // в правый верхний угол
+  // для красоты добавим оси координат (как у всех нормальных людей)
+  // в правый верхний угол
 }
 
 void Renderer::BuildShader() {
-
   // подключения шейдеров к графическому конвейру:
   // read shaders
   std::string vertexCode;
@@ -321,8 +316,20 @@ void Renderer::RenderAxes() const{
     glDrawArrays(GL_LINES, 0, 28);
 }
 
-void Renderer::SetDefoultPos()
-{ rotMatrix = glm::mat4(1.0f); }
+void Renderer::RenderLightGame() const {
+
+    int uni_AmbientLight = glGetUniformLocation(shaderProgram, "AmbientLight");
+    if (localLightsettings->lightgame)
+    {
+      // выставляем параметры фонового света
+      glUniform1f(uni_AmbientLight, localLightsettings->back_intensity);
+    }
+    else
+    {
+      glUniform1f(uni_AmbientLight, 1.0f);
+    }
+
+}
 
 Renderer::~Renderer()
 {
