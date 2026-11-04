@@ -1,4 +1,10 @@
 #pragma once
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
+
+#include "visual_integrator/ui/LightSettings.h"
+#include "visual_integrator/ui/lightmenu.h"
 
 namespace visual_integrator {
 
@@ -10,16 +16,14 @@ class Menu {
   char strFunc[128] = "";
 
   bool startCalc = false;
-
-  bool startCalc = false;
-
-  // ImGuiWindowFlags menu_flags = 0;
-  // bool menu_open = true,
   bool openDemoWind = false;
+  bool openLightWind = false;
 
   Menu() = default;
   ~Menu() = default;
   void Show();
+
+  LightMenu lightmenu;
 
  private:
   static void HelpMarker(const char* desc);

@@ -315,18 +315,28 @@ void Renderer::render_frame() const {
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
   glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, 0);
 
-  // рисуем оси:
-  // отправляем нужные матрицы
-  glUniformMatrix4fv(uni_MVP, 1, GL_FALSE, glm::value_ptr(axes_MVP));
-  // рисуем
-  RenderAxes();
+  RenderLightGame();
+
+  if (!localLightsettings->lightgame) {
+    // рисуем оси:
+    // отправляем нужные матрицы
+    glUniformMatrix4fv(uni_MVP, 1, GL_FALSE, glm::value_ptr(axes_MVP));
+    // рисуем
+    RenderAxes();
+  }
 }
 
 void Renderer::SetSize(int framebuffer_width, int framebuffer_height) {
   screenWidth = framebuffer_width;
   screenHeight = framebuffer_height;
 }
-
+void Renderer::SetDefoultPos() {
+  rotMatrix = glm::mat4(1.0f);
+  distance = 2.0f;
+}
+void Renderer::SetLightData(LightSettings* light) {
+  localLightsettings = light;
+};
 void Renderer::SetVideoData() {
   // этот массив позже станет изменяемым по нажатию кнопки "start"
   float vertices[] = {// positions         // colors
@@ -342,6 +352,7 @@ void Renderer::SetVideoData() {
                             0, 2, 3, 0, 3, 1, 4, 7, 6, 4, 5, 7};
 
   vertexCount = 36;
+  vertexCount = 36;
 
   // эти строки передают данные на видеокарту
   // это вершины в локальных координатах
@@ -353,6 +364,8 @@ void Renderer::SetVideoData() {
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices,
                GL_STATIC_DRAW);
 
+  // для красоты добавим оси координат (как у всех нормальных людей)
+  // в правый верхний угол
   // для красоты добавим оси координат (как у всех нормальных людей)
   // в правый верхний угол
 }
@@ -494,7 +507,15 @@ void Renderer::RenderAxes() const {
   glDrawArrays(GL_LINES, 0, 28);
 }
 
-void Renderer::SetDefoultPos() { rotMatrix = glm::mat4(1.0f); }
+void Renderer::RenderLightGame() const {
+  int uni_AmbientLight = glGetUniformLocation(shaderProgram, "AmbientLight");
+  if (localLightsettings->lightgame) {
+    // выставляем параметры фонового света
+    glUniform1f(uni_AmbientLight, localLightsettings->back_intensity);
+  } else {
+    glUniform1f(uni_AmbientLight, 1.0f);
+  }
+}
 
 Renderer::~Renderer() {
   glDeleteVertexArrays(1, &VAO);
