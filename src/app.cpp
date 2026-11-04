@@ -33,6 +33,10 @@ int run()
                 renderer.RotateObject(io.MouseDelta.x, io.MouseDelta.y);
                 frameChange = true;
             }
+            if (ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
+              renderer.SetDefoultPos();
+              frameChange = true;
+            }
             if (io.MouseWheel != 0)
             {
                 renderer.ZoomObject(io.MouseWheel);

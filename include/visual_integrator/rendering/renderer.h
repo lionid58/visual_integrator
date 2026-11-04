@@ -13,6 +13,7 @@ class Renderer {
 
 	void render_frame() const;
 	void SetSize(int framebuffer_width, int framebuffer_height);
+	void SetDefoultPos();
 
 	void SetVideoData();
 	void BuildShader();
