@@ -1,4 +1,4 @@
-#include "visual_integrator/ui/lightmenu.h"
+#include "visual_integrator/ui/lightMenu.h"
 namespace visual_integrator {
 
 void LightMenu::LightShow() {

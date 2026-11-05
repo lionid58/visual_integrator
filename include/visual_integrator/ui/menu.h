@@ -4,7 +4,7 @@
 #include <imgui_impl_opengl3.h>
 
 #include "visual_integrator/ui/LightSettings.h"
-#include "visual_integrator/ui/lightmenu.h"
+#include "visual_integrator/ui/lightMenu.h"
 
 namespace visual_integrator {
 

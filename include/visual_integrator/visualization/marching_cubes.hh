@@ -15,7 +15,7 @@ struct Grid {
   std::vector<double> valuse;
   std::vector<Location> locations;
 
-  Grid::Grid(glm::dvec3 steps, glm::dvec3 origin_of_area, glm::dvec3 area_sizes,
+  Grid(glm::dvec3 steps, glm::dvec3 origin_of_area, glm::dvec3 area_sizes,
              std::function<double(glm::dvec3)> impSurfFunc);
 };
 }  // namespace visual_integrator
