@@ -20,8 +20,13 @@ add_executable(visual_integrator
   src/platform/window.cpp
   src/rendering/renderer.cpp
   src/ui/menu.cpp 
-  src/mathcore/parser.cpp)
-  src/visualization/voxel.cc)
+  src/mathcore/parser.cpp
+  src/visualization/voxel.cc  "include/visual_integrator/ui/lightMenu.h" "src/ui/lightMenu.cpp" "include/visual_integrator/ui/LightSettings.h")
+add_custom_command(TARGET visual_integrator POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+  "${CMAKE_SOURCE_DIR}/src/rendering/shaders"
+  "$<TARGET_FILE_DIR:visual_integrator>/shaders"
+)
 target_include_directories(visual_integrator PRIVATE include)
 target_link_libraries(visual_integrator PRIVATE
   muparser::muparser
@@ -49,7 +54,7 @@ if(VISUAL_INTEGRATOR_BUILD_TESTS)
       "-DCLANG_FORMAT_EXECUTABLE=${CLANG_FORMAT_EXECUTABLE}"
       -P "${PROJECT_SOURCE_DIR}/tests/format_targets_test.cmake")
   find_package(GTest CONFIG REQUIRED)
-  add_executable(unit_tests tests/smoke_test.cpp "src/mathcore/parser.cpp")
+  add_executable(unit_tests tests/smoke_test.cpp "src/mathcore/parser.cpp"  "include/visual_integrator/ui/lightMenu.h" "src/ui/lightMenu.cpp" "include/visual_integrator/ui/LightSettings.h")
   target_include_directories(unit_tests PRIVATE include)
   target_link_libraries(unit_tests PRIVATE
     GTest::gtest_main
