@@ -21,6 +21,7 @@ add_executable(visual_integrator
   src/rendering/renderer.cpp
   src/ui/menu.cpp 
   src/mathcore/parser.cpp
+  src/visualization/primitives.cc
   src/visualization/marching_cubes.cc  "include/visual_integrator/ui/lightMenu.h" "src/ui/lightMenu.cpp" "include/visual_integrator/ui/LightSettings.h")
 add_custom_command(TARGET visual_integrator POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_directory
@@ -55,6 +56,7 @@ if(VISUAL_INTEGRATOR_BUILD_TESTS)
       -P "${PROJECT_SOURCE_DIR}/tests/format_targets_test.cmake")
   find_package(GTest CONFIG REQUIRED)
   add_executable(unit_tests tests/smoke_test.cpp tests/marching_cubes_tables_test.cpp
+    tests/marching_cubes_test.cpp src/visualization/marching_cubes.cc src/visualization/primitives.cc
     "src/mathcore/parser.cpp" "include/visual_integrator/ui/lightMenu.h"
     "src/ui/lightMenu.cpp" "include/visual_integrator/ui/LightSettings.h")
   target_include_directories(unit_tests PRIVATE include)

@@ -1,10 +1,13 @@
+#pragma once
+
 #include <array>
+#include <cstddef>
 #include <glm/vec3.hpp>
 #include <vector>
 
 namespace visual_integrator {
 struct Triangel {
-  std::array<std::uint8_t, 3> vertics;
+  std::array<std::size_t, 3> vertics;
 };
 
 class TriangelMesh {
@@ -13,6 +16,10 @@ class TriangelMesh {
   std::vector<Triangel> triangels;
 
  public:
-  TriangelMesh(std::vector<glm::vec3> vertics_, std::vector<Triangel> triangels_);
+  const std::vector<glm::vec3>& vertices() const { return vertics; }
+  const std::vector<Triangel>& triangles() const { return triangels; }
+
+  TriangelMesh(std::vector<glm::vec3> vertics_,
+               std::vector<Triangel> triangels_);
 };
 }  // namespace visual_integrator

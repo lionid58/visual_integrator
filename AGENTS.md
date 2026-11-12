@@ -2,7 +2,7 @@
 
 ## Project Structure & Module Organization
 
-This is a C++20 OpenGL application built with CMake and Ninja. Application code lives in `src/`; place reusable public headers in `include/`. Tests belong in `tests/` and are registered through GoogleTest. CMake helpers live in `cmake/`, while dependency versions and features are declared in `vcpkg.json`. Keep generated files under `build/` (for example, `build/default`) and do not commit build output or `vcpkg_installed/`.
+This is a C++23 OpenGL application built with CMake and Ninja. Application code lives in `src/`; place reusable public headers in `include/`. Tests belong in `tests/` and are registered through GoogleTest. CMake helpers live in `cmake/`, while dependency versions and features are declared in `vcpkg.json`. Keep generated files under `build/` (for example, `build/default`) and do not commit build output or `vcpkg_installed/`.
 
 ## Architecture & Data Flow
 
@@ -41,8 +41,8 @@ The executable is written to `build/default/visual_integrator` for the default p
 
 ## Coding Style & Naming Conventions
 
-Use test driven development.
-Use C++20 and keep compiler warnings (`-Wall -Wextra -Wpedantic`) clean. `.clang-format` defines Google style, two-space indentation, a 100-column limit, left-aligned pointers, and case-sensitive include sorting. Use `snake_case` for files and functions, `PascalCase` for types, and `UPPER_SNAKE_CASE` for constants or macros. Prefer small translation units and expose interfaces through `include/` only when they are shared.
+Use test driven development, RAII.
+Use C++23 and keep compiler warnings (`-Wall -Wextra -Wpedantic`) clean. `.clang-format` defines Google style, two-space indentation, a 100-column limit, left-aligned pointers, and case-sensitive include sorting. Use `snake_case` for files and functions, `PascalCase` for types, and `UPPER_SNAKE_CASE` for constants or macros. Prefer small translation units and expose interfaces through `include/` only when they are shared.
 
 ## Testing Guidelines
 
