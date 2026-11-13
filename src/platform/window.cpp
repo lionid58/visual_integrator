@@ -115,4 +115,19 @@ std::pair<int, int> Window::framebuffer_size() const {
 void Window::poll_events() const { glfwPollEvents(); }
 void Window::swap_buffers() const { glfwSwapBuffers(window_); }
 
+void Window::HideMouse(bool lightGame) const {
+  if (lightGame) 
+  {
+    // Скрыть курсор и захватить его (при переходе в режим камеры)
+    glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+  }
+  else
+  {
+    // Вернуть видимый курсор
+    glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+  }
+}
+
+
+
 }  // namespace visual_integrator

@@ -25,6 +25,10 @@ class Renderer {
     void ZoomObject(float delta_z);
     void RenderLightGame() const;
 
+	// Управление свободной камерой для режима Light Game
+    void MoveCamera(float forward, float right, float up, float dt);
+    void RotateCamera(float deltaX, float deltaY);
+
   private:
     LightSettings* localLightsettings = nullptr;
 	/*
@@ -39,11 +43,18 @@ class Renderer {
  	// матрица накопления вращения
 	glm::mat4 rotMatrix = glm::mat4(1.0f);
 	// MVP матрицы - это произведение матрц модели * взгляда * проекции
-	glm::mat4 main_MVP, axes_MVP;
+	glm::mat4 main_MVP, light_main_MVP, axes_MVP;
 	// расстояние от камеры
 	float distance = 2.0f;
 	void InitAxes();
     void RenderAxes() const;
+
+	// Параметры свободной камеры
+    glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 2.0f);
+    glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+    glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+    float yaw = -90.0f;  // взгляд вдоль -Z
+    float pitch = 0.0f;
 };
 
 }  // namespace visual_integrator

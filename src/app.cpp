@@ -5,6 +5,7 @@ namespace visual_integrator {
 int run() 
 {
     bool frameChange = true;
+    bool prev_lightgame = false;
     LightSettings globalLightsettings;
 
 	Window window;
@@ -31,22 +32,59 @@ int run()
         // так что перестраивать матрицы мы тоже будет здесь
         if (!io.WantCaptureMouse)
         {
-            if (ImGui::IsMouseDown(ImGuiMouseButton_Left))
+            if (globalLightsettings.lightgame)
             {
-                renderer.RotateObject(io.MouseDelta.x, io.MouseDelta.y);
-                frameChange = true;
+                //========== УПРАВЛЕНИЕ В РЕЖИМЕ СВЕТА ==========
+                if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) 
+                {
+                    renderer.RotateCamera(io.MouseDelta.x, io.MouseDelta.y);
+                    frameChange = true;
+                }
+
+                // Перемещение WASD + Space (вверх) + LeftShift (вниз)
+                float forward = 0.0f, right = 0.0f, up = 0.0f;
+                if (ImGui::IsKeyDown(ImGuiKey_W)) forward += 1.0f;
+                if (ImGui::IsKeyDown(ImGuiKey_S)) forward -= 1.0f;
+                if (ImGui::IsKeyDown(ImGuiKey_D)) right += 1.0f;
+                if (ImGui::IsKeyDown(ImGuiKey_A)) right -= 1.0f;
+                if (ImGui::IsKeyDown(ImGuiKey_Space)) up += 1.0f;
+                if (ImGui::IsKeyDown(ImGuiKey_LeftShift)) up -= 1.0f;
+                if (ImGui::IsKeyDown(ImGuiKey_Escape)) globalLightsettings.lightgame = false;
+
+                if (forward != 0.0f || right != 0.0f || up != 0.0f) 
+                {
+                    renderer.MoveCamera(forward, right, up, io.DeltaTime);
+                    frameChange = true;
+                }
             }
-            if (ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
-              renderer.SetDefoultPos();
-              frameChange = true;
-            }
-            if (io.MouseWheel != 0)
+            else
             {
-                renderer.ZoomObject(io.MouseWheel);
-                frameChange = true;
+                //========== УПРАВЛЕНИЕ В РЕЖИМЕ ПРОСМОТРА ==========
+                if (ImGui::IsMouseDown(ImGuiMouseButton_Left))
+                {
+                    renderer.RotateObject(io.MouseDelta.x, io.MouseDelta.y);
+                    frameChange = true;
+                }
+                if (ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
+                  renderer.SetDefoultPos();
+                  frameChange = true;
+                }
+                if (io.MouseWheel != 0)
+                {
+                    renderer.ZoomObject(io.MouseWheel);
+                    frameChange = true;
+                }
             }
+
         }
 
+        if (globalLightsettings.lightgame != prev_lightgame)
+        {
+          frameChange = true;
+          prev_lightgame = globalLightsettings.lightgame;
+        }
+
+        //window.HideMouse(globalLightsettings.lightgame);
         menu.Show();
         ImGui::Render();
 

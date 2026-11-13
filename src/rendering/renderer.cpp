@@ -120,7 +120,10 @@ void Renderer::render_frame() const {
   // тут мы назначаем окно 
   glViewport(0, 0, screenWidth, screenHeight);
   // я очень захотел сиреневое окно, оно крутое
-  glClearColor(42.0f / 255.0, 42.0f / 255.0, 53.0f / 255, 1.0f);
+  float intensity = 1.0;
+  if (localLightsettings->lightgame)
+      intensity = localLightsettings->back_intensity;
+  glClearColor(intensity * 42.0f / 255.0, intensity * 42.0f / 255.0, intensity * 53.0f / 255, 1.0f);
   // и отчищаем цвета
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glUseProgram(shaderProgram);
@@ -132,8 +135,13 @@ void Renderer::render_frame() const {
   
 
   // рисуем основную штуку:
-  // отправляем нужные матрицы
-  glUniformMatrix4fv(uni_MVP, 1, GL_FALSE, glm::value_ptr(main_MVP));
+  // отправляем нужные матрицы свободные или орбитные
+  // свободная - управление на WASD
+  // орбитная - только вокруг обьекта
+  if (localLightsettings->lightgame)
+    glUniformMatrix4fv(uni_MVP, 1, GL_FALSE, glm::value_ptr(light_main_MVP));
+  else
+    glUniformMatrix4fv(uni_MVP, 1, GL_FALSE, glm::value_ptr(main_MVP));
   // рисуем
   glBindVertexArray(VAO);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
@@ -259,29 +267,33 @@ void Renderer::BuildShader() {
 }
 
 void Renderer::BuildViewMatrixs(){
-
-    // --------------MAIN MATRIX-----------------
-    glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 1.0f);
-    glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-    glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-
-    glm::mat4 mainModel = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -distance));
-    mainModel *= rotMatrix;
-
-    glm::mat4 mainView = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-
     glm::mat4 mainProj = 
         glm::perspective(glm::radians(60.0f), (float)screenWidth / screenHeight, 0.1f, 100.0f);
-    main_MVP = mainProj * mainView * mainModel;
+    if (localLightsettings->lightgame)
+    {
+        //--------------MAIN MATRIX-----------------
+        glm::mat4 mainModel = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -distance));
+        mainModel *= rotMatrix;
+        glm::mat4 mainView = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+        light_main_MVP = mainProj * mainView * mainModel;
+    }
+    else
+    {
+        //--------------MAIN MATRIX-----------------
+        glm::vec3 orbitCamPos = glm::vec3(0.0f, 0.0f, distance);
+        glm::mat4 mainModel = rotMatrix;
+        glm::mat4 mainView = glm::lookAt(orbitCamPos, glm::vec3(0.0f, 0.0f, 0.0f), cameraUp);
 
-    // -----------------AXES MATRIX------------------
+       
+        main_MVP = mainProj * mainView * mainModel;
+        //-----------------AXES MATRIX------------------
+        glm::mat4 axesView = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.0f), 
+                                        glm::vec3(0.0f, 0.0f, -1.0f),
+                                        glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::mat4 axesProj = glm::ortho(-1.5f, 1.5f, -1.5f, 1.5f, 0.1f, 10.0f);
+        axes_MVP = axesProj * axesView * rotMatrix;
+    }
 
-    //glm::mat4 axesModel = rotMatrix;
-    glm::mat4 axesView = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.0f), 
-                                     glm::vec3(0.0f, 0.0f, -1.0f),
-                                     glm::vec3(0.0f, 1.0f, 0.0f));
-    glm::mat4 axesProj = glm::ortho(-1.5f, 1.5f, -1.5f, 1.5f, 0.1f, 10.0f);
-    axes_MVP = axesProj * axesView * rotMatrix;
 }
 
 void Renderer::RotateObject(float deltaX, float deltaY) {
@@ -290,6 +302,31 @@ void Renderer::RotateObject(float deltaX, float deltaY) {
   delta_rot = glm::rotate(delta_rot, deltaX * sensitivity, glm::vec3(0.0f, 1.0f, 0.0f));
   delta_rot = glm::rotate(delta_rot, deltaY * sensitivity, glm::vec3(1.0f, 0.0f, 0.0f));
   rotMatrix = delta_rot * rotMatrix;
+}
+
+void Renderer::MoveCamera(float forward, float right, float up, float dt) {
+  const float speed = 2.5f * dt;
+  // Вектор "вправо" перпендикулярен взгляду и мировому верху
+  glm::vec3 rightVec = glm::normalize(glm::cross(cameraFront, cameraUp));
+
+  cameraPos += cameraFront * (forward * speed);
+  cameraPos += rightVec * (right * speed);
+  cameraPos += cameraUp * (up * speed);
+}
+
+void Renderer::RotateCamera(float deltaX, float deltaY) {
+  const float sensitivity = 0.15f;
+  yaw += deltaX * sensitivity;
+  pitch -= deltaY * sensitivity;  // Инвертируем Y для привычного обзора
+
+  if (pitch > 89.0f) pitch = 89.0f;
+  if (pitch < -89.0f) pitch = -89.0f;
+
+  glm::vec3 front;
+  front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+  front.y = sin(glm::radians(pitch));
+  front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+  cameraFront = glm::normalize(front);
 }
 
 void Renderer::ZoomObject(float delta_z) {

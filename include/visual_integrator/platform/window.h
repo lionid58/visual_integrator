@@ -24,6 +24,7 @@ class Window {
   std::pair<int, int> framebuffer_size() const;
   void poll_events() const;
   void swap_buffers() const;
+  void HideMouse(bool lightGame) const;
 
  private:
   GLFWwindow* window_ = nullptr;
