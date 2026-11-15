@@ -6,8 +6,9 @@ void LightMenu::LightShow() {
 
   //--------------BACKGROUND--------------------
   ImGui::SeparatorText("BACKGROUND");
-  //ImGui::Checkbox("background light", &localLightsettings->back_Light);
-  ImGui::SliderFloat("intensity", &localLightsettings->back_intensity, 0.0f, 1.0f, "%.3f");
+  // ImGui::Checkbox("background light", &localLightsettings->back_Light);
+  ImGui::SliderFloat("intensity", &localLightsettings->back_intensity, 0.0f,
+                     1.0f, "%.3f");
 
   //--------------DEFFUSE--------------------
   ImGui::SeparatorText("DEFFUSE");
@@ -18,6 +19,8 @@ void LightMenu::LightShow() {
   ImGui::Checkbox("reflections", &localLightsettings->reflect_Light);
 };
 
-void LightMenu::SetLightData(LightSettings* light) { localLightsettings = light; }
+void LightMenu::SetLightData(LightSettings* light) {
+  localLightsettings = light;
+}
 
 }  // namespace visual_integrator

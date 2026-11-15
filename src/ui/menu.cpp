@@ -18,6 +18,7 @@ void Menu::Show() {
       ImGui::SeparatorText("FUNCTION AND AREA");
       // field for entering a function:
       ImGui::Text("Function f(x, y, z):");
+      ImGui::TextDisabled("Inside: f(x, y, z) < 0");
       // make text field use all width of menu
       ImGui::SetNextItemWidth(-1.0f);
       // ##_name that way we don't make label on the left side
@@ -29,15 +30,13 @@ void Menu::Show() {
       ImGui::InputFloat2("(z)", zRange);
       //--------------VOXEL GRID--------------------
       ImGui::SeparatorText("VOXEL GRID");
-      ImGui::SetNextItemWidth(-1.0);
-      ImGui::ProgressBar(-1.0f * (float)ImGui::GetTime(), ImVec2(0.0f, 0.0f),
-                         "In develop...");
+      ImGui::InputInt("Cells per axis", &cells);
+      ImGui::TextDisabled("Allowed: 2 to 128");
+      ImGui::Combo("Cut axis", &axis, "X\0Y\0Z\0");
 
       //--------------ANIMATION PARAMS--------------
       ImGui::SeparatorText("ANIMATION PARAMETERS");
-      ImGui::SetNextItemWidth(-1.0);
-      ImGui::ProgressBar(-1.0f * (float)ImGui::GetTime(), ImVec2(0.0f, 0.0f),
-                         "In develop...");
+      ImGui::InputFloat("Seconds per slice", &interval, 0.05f, 0.5f, "%.2f");
 
       //--------------DELETE LATER------------------
       ImGui::SeparatorText("DELETE LATER");
@@ -47,6 +46,8 @@ void Menu::Show() {
       if (ImGui::Button("start")) {
         startCalc = true;
       }
+      if (calculating) ImGui::TextUnformatted("Calculating...");
+      if (!status.empty()) ImGui::TextWrapped("%s", status.c_str());
 
       ImGui::EndTabItem();
     }

@@ -1,20 +1,19 @@
 #pragma once
 #include <imgui.h>
-#include "visual_integrator/ui/LightSettings.h"
 
+#include "visual_integrator/ui/LightSettings.h"
 
 namespace visual_integrator {
 
 class LightMenu {
-
-public:
+ public:
   LightMenu() = default;
   ~LightMenu() = default;
   void LightShow();
   // вот так мы связываем меню и рендер
   void SetLightData(LightSettings* light);
 
-private:
+ private:
   LightSettings* localLightsettings = nullptr;
 };
 

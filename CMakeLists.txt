@@ -23,13 +23,15 @@ add_executable(visual_integrator
   src/ui/menu.cpp 
   src/mathcore/parser.cpp
   src/visualization/primitives.cc
+  src/visualization/area_pipeline.cpp
   src/visualization/marching_cubes.cc  "include/visual_integrator/ui/lightMenu.h" "src/ui/lightMenu.cpp" "include/visual_integrator/ui/LightSettings.h")
-add_custom_command(TARGET visual_integrator POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_directory
-  "${CMAKE_SOURCE_DIR}/src/rendering/shaders"
-  "$<TARGET_FILE_DIR:visual_integrator>/shaders"
-)
-target_include_directories(visual_integrator PRIVATE include)
+file(READ "${CMAKE_SOURCE_DIR}/src/rendering/shaders/shader.vert" VERTEX_SHADER_SOURCE)
+file(READ "${CMAKE_SOURCE_DIR}/src/rendering/shaders/shader.frag" FRAGMENT_SHADER_SOURCE)
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+  "${CMAKE_SOURCE_DIR}/src/rendering/shaders/shader.vert"
+  "${CMAKE_SOURCE_DIR}/src/rendering/shaders/shader.frag")
+configure_file(cmake/shaders.h.in "${CMAKE_CURRENT_BINARY_DIR}/generated/shaders.h" @ONLY)
+target_include_directories(visual_integrator PRIVATE include "${CMAKE_CURRENT_BINARY_DIR}/generated")
 target_link_libraries(visual_integrator PRIVATE
   muparser::muparser
   earcut_hpp::earcut_hpp
@@ -57,8 +59,8 @@ if(VISUAL_INTEGRATOR_BUILD_TESTS)
       "-DCLANG_FORMAT_EXECUTABLE=${CLANG_FORMAT_EXECUTABLE}"
       -P "${PROJECT_SOURCE_DIR}/tests/format_targets_test.cmake")
   find_package(GTest CONFIG REQUIRED)
-  add_executable(unit_tests tests/primitives_test.cpp tests/smoke_test.cpp tests/marching_cubes_tables_test.cpp
-    tests/marching_cubes_test.cpp src/visualization/marching_cubes.cc src/visualization/primitives.cc
+  add_executable(unit_tests tests/area_pipeline_test.cpp tests/primitives_test.cpp tests/smoke_test.cpp tests/marching_cubes_tables_test.cpp
+    tests/marching_cubes_test.cpp src/visualization/marching_cubes.cc src/visualization/primitives.cc src/visualization/area_pipeline.cpp
     "src/mathcore/parser.cpp" "include/visual_integrator/ui/lightMenu.h"
     "src/ui/lightMenu.cpp" "include/visual_integrator/ui/LightSettings.h")
   target_include_directories(unit_tests PRIVATE include)

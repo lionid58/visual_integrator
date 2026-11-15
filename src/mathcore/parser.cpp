@@ -1,13 +1,7 @@
 #include "visual_integrator/mathcore/parser.h"
 namespace visual_integrator {
 
-void ParserFunc::ParseFunc(char* strFunc) {
-  try {
-    parserF.SetExpr(strFunc);
-  } catch (mu::Parser::exception_type& e) {
-    std::cout << e.GetMsg() << std::endl;
-  }
-}
+void ParserFunc::ParseFunc(char* strFunc) { parserF.SetExpr(strFunc); }
 
 ParserFunc::ParserFunc() {
   parserF.DefineVar("x", &var_x);
@@ -19,11 +13,7 @@ double ParserFunc::Evaluate(glm::dvec3 vec) {
   var_x = vec.x;
   var_y = vec.y;
   var_z = vec.z;
-  try {
-    return parserF.Eval();
-  } catch (mu::Parser::exception_type& e) {
-    std::cout << e.GetMsg() << std::endl;
-  }
+  return parserF.Eval();
 }
 
 }  // namespace visual_integrator

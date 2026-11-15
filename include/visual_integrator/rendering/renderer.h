@@ -1,49 +1,36 @@
-#pragma once
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
+#include <span>
+#include <vector>
+
 #include "visual_integrator/ui/LightSettings.h"
+#include "visual_integrator/visualization/primitives.hh"
 
 namespace visual_integrator {
-
 class Renderer {
  public:
-	// Requires a current OpenGL context that outlives this renderer.
-	Renderer();
-	~Renderer();
+  Renderer();
+  ~Renderer();
+  Renderer(const Renderer&) = delete;
+  Renderer& operator=(const Renderer&) = delete;
+  void render_frame() const;
+  void SetSize(int width, int height);
+  void SetDefoultPos();
+  void SetLightData(LightSettings* light);
+  void SetVideoData(std::span<const TriangelMesh> slices, glm::dvec3 min,
+                    glm::dvec3 max);
+  void SetVisibleSlices(std::size_t count);
+  void BuildShader();
+  void BuildViewMatrixs();
+  void RotateObject(float x, float y);
+  void ZoomObject(float delta);
 
-	void render_frame() const;
-	void SetSize(int framebuffer_width, int framebuffer_height);
-	void SetDefoultPos();
-    // вот так мы связываем меню и рендер
-	void SetLightData(LightSettings* light);
-	void SetVideoData();
-
-	void BuildShader();
-	void BuildViewMatrixs();
-    void RotateObject(float delta_x, float delta_y);
-    void ZoomObject(float delta_z);
-    void RenderLightGame() const;
-
-  private:
-    LightSettings* localLightsettings = nullptr;
-	/*
-	// VAO - ?
-	// VBO - vertices buffer object
-	// EBO - element buffer object
-	*/
-	unsigned int VAO, VBO, EBO, shaderProgram;
-	// это для осей координат
-	unsigned int axes_VAO, axes_VBO;
-	int screenWidth, screenHeight, vertexCount = 0;
- 	// матрица накопления вращения
-	glm::mat4 rotMatrix = glm::mat4(1.0f);
-	// MVP матрицы - это произведение матрц модели * взгляда * проекции
-	glm::mat4 main_MVP, axes_MVP;
-	// расстояние от камеры
-	float distance = 2.0f;
-	void InitAxes();
-    void RenderAxes() const;
+ private:
+  LightSettings* light_ = nullptr;
+  unsigned int vao_ = 0, vbo_ = 0, ebo_ = 0, program_ = 0;
+  unsigned int axes_vao_ = 0, axes_vbo_ = 0;
+  int width_ = 1, height_ = 1, index_count_ = 0;
+  std::vector<int> slice_index_counts_;
+  glm::mat4 rotation_{1.0f}, main_mvp_{1.0f}, axes_mvp_{1.0f};
+  float distance_ = 2.0f;
 };
-
 }  // namespace visual_integrator

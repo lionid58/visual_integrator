@@ -1,0 +1,3 @@
+#pragma once
+constexpr const char* VERTEX_SHADER = R"SHADER(@VERTEX_SHADER_SOURCE@)SHADER";
+constexpr const char* FRAGMENT_SHADER = R"SHADER(@FRAGMENT_SHADER_SOURCE@)SHADER";

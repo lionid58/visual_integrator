@@ -1,613 +1,209 @@
 #include "visual_integrator/rendering/renderer.h"
-
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
 
-#include <fstream>
-#include <iostream>
-#include <sstream>
+#include <algorithm>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <limits>
 #include <stdexcept>
+#include <string>
+#include <vector>
+
+#include "shaders.h"
 
 namespace visual_integrator {
-
+namespace {
+unsigned int compile_shader(unsigned int type, const char* source) {
+  const auto shader = glCreateShader(type);
+  glShaderSource(shader, 1, &source, nullptr);
+  glCompileShader(shader);
+  int ok = 0;
+  glGetShaderiv(shader, GL_COMPILE_STATUS, &ok);
+  if (!ok) {
+    int length = 0;
+    glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &length);
+    std::string log(std::max(length, 1), '\0');
+    glGetShaderInfoLog(shader, length, nullptr, log.data());
+    glDeleteShader(shader);
+    throw std::runtime_error("Shader compilation failed: " + log);
+  }
+  return shader;
+}
+void attributes() {
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), nullptr);
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float),
+                        reinterpret_cast<void*>(3 * sizeof(float)));
+  glEnableVertexAttribArray(1);
+}
+}  // namespace
 Renderer::Renderer() {
-  if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress))) {
+  if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)))
     throw std::runtime_error("Failed to load OpenGL");
-  }
-  // эта строка отвечает за обработку глубины
   glEnable(GL_DEPTH_TEST);
-  // обработка мыши находиться в window.cpp
-
-  /* так как функции GlGen... именно создают новые буферы
-  // их надо вынести в конструкто, а иначе при обновления массива vertex[]
-  // мы каждый раз будем генерить новый буфер, не удаляя старый
-  // в общем это нужно от утечек памяти
-  //
-  //
-  // Да и обьяснения формата данных всегда одно и тоже,
-  // отчего это тоже будет здесь.
-  */
-
-  // glGenVertexArrays — generate vertex array object names
-  glGenVertexArrays(1, &VAO);
-  glBindVertexArray(VAO);
-
-  // glGenBuffers — generate buffer object names
-  glGenBuffers(1, &VBO);
-  glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
-  glGenBuffers(1, &EBO);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-  // далее мы обьясняем видеокарте что значат переданные файлы:
-  // ---первые три числа это КООРДИНАТЫ В ПРОСТРАНСТВЧЕ
-  // ---оставшиеся это цвет
-  // position
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-  glEnableVertexAttribArray(0);
-  // color
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float),
-                        (void*)(3 * sizeof(float)));
-  glEnableVertexAttribArray(1);
-
-  InitAxes();
+  glGenVertexArrays(1, &vao_);
+  glGenBuffers(1, &vbo_);
+  glGenBuffers(1, &ebo_);
+  glBindVertexArray(vao_);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo_);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_);
+  attributes();
+  const float axes[] = {
+      0,    0,     0,     1, 0,   0, 1,     0,     0,     1, 0,   0,
+      1,    0,     0,     1, 0,   0, .8f,   .12f,  0,     1, 0,   0,
+      1,    0,     0,     1, 0,   0, .8f,   -.12f, 0,     1, 0,   0,
+      1.1f, -.1f,  0,     1, 0,   0, 1.3f,  .1f,   0,     1, 0,   0,
+      1.1f, .1f,   0,     1, 0,   0, 1.3f,  -.1f,  0,     1, 0,   0,
+      0,    0,     0,     0, 1,   0, 0,     1,     0,     0, 1,   0,
+      0,    1,     0,     0, 1,   0, .12f,  .8f,   0,     0, 1,   0,
+      0,    1,     0,     0, 1,   0, -.12f, .8f,   0,     0, 1,   0,
+      0,    1.1f,  0,     0, 1,   0, 0,     1.22f, 0,     0, 1,   0,
+      0,    1.22f, 0,     0, 1,   0, -.1f,  1.32f, 0,     0, 1,   0,
+      0,    1.22f, 0,     0, 1,   0, .1f,   1.32f, 0,     0, 1,   0,
+      0,    0,     0,     0, .5f, 1, 0,     0,     1,     0, .5f, 1,
+      0,    0,     1,     0, .5f, 1, .12f,  0,     .8f,   0, .5f, 1,
+      0,    0,     1,     0, .5f, 1, -.12f, 0,     .8f,   0, .5f, 1,
+      -.1f, .1f,   1.15f, 0, .5f, 1, .1f,   .1f,   1.15f, 0, .5f, 1,
+      .1f,  .1f,   1.15f, 0, .5f, 1, -.1f,  -.1f,  1.15f, 0, .5f, 1,
+      -.1f, -.1f,  1.15f, 0, .5f, 1, .1f,   -.1f,  1.15f, 0, .5f, 1};
+  glGenVertexArrays(1, &axes_vao_);
+  glGenBuffers(1, &axes_vbo_);
+  glBindVertexArray(axes_vao_);
+  glBindBuffer(GL_ARRAY_BUFFER, axes_vbo_);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(axes), axes, GL_STATIC_DRAW);
+  attributes();
 }
-
-void Renderer::InitAxes() {
-  float axesVertices[] = {
-      // Ось X
-      0.0f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      0.0f,
-      // стрелочки
-      1.0f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      0.0f,
-      0.8f,
-      0.2f,
-      0.0f,
-      1.0f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      0.0f,
-      0.8f,
-      -0.2f,
-      0.0f,
-      1.0f,
-      0.0f,
-      0.0f,
-      // буковка
-      1.15f,
-      -0.15f,
-      0.0f,
-      1.0f,
-      0.0f,
-      0.0f,
-      1.35f,
-      0.15f,
-      0.0f,
-      1.0f,
-      0.0f,
-      0.0f,
-      1.15f,
-      0.15f,
-      0.0f,
-      1.0f,
-      0.0f,
-      0.0f,
-      1.35f,
-      -0.15f,
-      0.0f,
-      1.0f,
-      0.0f,
-      0.0f,
-
-      // Ось Y
-      0.0f,
-      0.0f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      // стрелочки
-      0.0f,
-      1.0f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      0.2f,
-      0.8f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      -0.2f,
-      0.8f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      // буковка
-      0.0f,
-      1.10f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      0.0f,
-      1.25f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      0.0f,
-      1.25f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      -0.1f,
-      1.40f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      0.0f,
-      1.25f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      0.1f,
-      1.40f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      // Ось Y
-      0.0f,
-      0.0f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      // стрелочки
-      0.0f,
-      1.0f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      0.2f,
-      0.8f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      -0.2f,
-      0.8f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      // буковка
-      0.0f,
-      1.10f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      0.0f,
-      1.25f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      0.0f,
-      1.25f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      -0.1f,
-      1.40f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      0.0f,
-      1.25f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      0.1f,
-      1.40f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-
-      // Ось Z
-      0.0f,
-      0.0f,
-      0.0f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      0.0f,
-      1.0f,
-      // стрелочки
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      0.2f,
-      0.8f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      -0.2f,
-      0.8f,
-      0.0f,
-      0.0f,
-      1.0f,
-      // буковки не будет
-      // Ось Z
-      0.0f,
-      0.0f,
-      0.0f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      0.0f,
-      1.0f,
-      // стрелочки
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      0.2f,
-      0.8f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      0.0f,
-      1.0f,
-      0.0f,
-      -0.2f,
-      0.8f,
-      0.0f,
-      0.0f,
-      1.0f,
-      // буковки не будет
-  };
-
-  glGenVertexArrays(1, &axes_VAO);
-  glBindVertexArray(axes_VAO);
-
-  // glGenBuffers — generate buffer object names
-  glGenBuffers(1, &axes_VBO);
-  glBindBuffer(GL_ARRAY_BUFFER, axes_VBO);
-  // эти строки передают данные на видеокарту
-  // это вершины в локальных координатах
-  glBufferData(GL_ARRAY_BUFFER, sizeof(axesVertices), axesVertices,
-               GL_STATIC_DRAW);
-
-  // далее мы обьясняем видеокарте что значат переданные файлы:
-  // ---первые три числа это КООРДИНАТЫ В ПРОСТРАНСТВЧЕ
-  // ---оставшиеся это цвет
-  // position
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-  glEnableVertexAttribArray(0);
-  // color
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float),
-                        (void*)(3 * sizeof(float)));
-  glEnableVertexAttribArray(1);
-}
-
-void Renderer::render_frame() const {
-  // тут мы назначаем окно
-  glViewport(0, 0, screenWidth, screenHeight);
-  // я очень захотел сиреневое окно, оно крутое
-  glClearColor(42.0f / 255.0, 42.0f / 255.0, 53.0f / 255, 1.0f);
-  // и отчищаем цвета
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  glUseProgram(shaderProgram);
-
-  // эта строка ищет строку MVP в таблице шейдеров, чтобы туда отправить
-  // матрицы, так как эта строка одинакова, то будем искать её один раз
-  int uni_MVP = glGetUniformLocation(shaderProgram, "MVP");
-
-  // рисуем основную штуку:
-  // отправляем нужные матрицы
-  glUniformMatrix4fv(uni_MVP, 1, GL_FALSE, glm::value_ptr(main_MVP));
-  // рисуем
-  glBindVertexArray(VAO);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-  glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, 0);
-
-  RenderLightGame();
-
-  if (!localLightsettings->lightgame) {
-    // рисуем оси:
-    // отправляем нужные матрицы
-    glUniformMatrix4fv(uni_MVP, 1, GL_FALSE, glm::value_ptr(axes_MVP));
-    // рисуем
-    RenderAxes();
-  }
-}
-
-void Renderer::SetSize(int framebuffer_width, int framebuffer_height) {
-  screenWidth = framebuffer_width;
-  screenHeight = framebuffer_height;
-}
-void Renderer::SetDefoultPos() {
-  rotMatrix = glm::mat4(1.0f);
-  distance = 2.0f;
-}
-void Renderer::SetLightData(LightSettings* light) {
-  localLightsettings = light;
-};
-void Renderer::SetVideoData() {
-  // этот массив позже станет изменяемым по нажатию кнопки "start"
-  float vertices[] = {// positions         // colors
-                      -0.5f, -0.5f, -0.5f, 1.0f, 1.0f,  0.0f, -0.5f, -0.5f,
-                      0.5f,  1.0f,  0.0f,  0.0f, -0.5f, 0.5f, -0.5f, 0.0f,
-                      0.0f,  1.0f,  -0.5f, 0.5f, 0.5f,  0.0f, 1.0f,  0.0f,
-                      0.5f,  -0.5f, -0.5f, 0.0f, 1.0f,  0.0f, 0.5f,  -0.5f,
-                      0.5f,  0.0f,  0.0f,  1.0f, 0.5f,  0.5f, -0.5f, 1.0f,
-                      0.0f,  0.0f,  0.5f,  0.5f, 0.5f,  1.0f, 1.0f,  0.0f};
-
-  unsigned int indices[] = {0, 1, 4, 1, 5, 4, 2, 7, 3, 2, 6, 7,
-                            0, 6, 2, 0, 4, 6, 1, 3, 7, 1, 5, 7,
-                            0, 2, 3, 0, 3, 1, 4, 7, 6, 4, 5, 7};
-
-  vertexCount = 36;
-  vertexCount = 36;
-
-  // эти строки передают данные на видеокарту
-  // это вершины в локальных координатах
-  glBindVertexArray(VAO);
-  glBindBuffer(GL_ARRAY_BUFFER, VBO);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-  // это индесы вершин, чтобы в массиве вершин были только уникальные
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices,
-               GL_STATIC_DRAW);
-
-  // для красоты добавим оси координат (как у всех нормальных людей)
-  // в правый верхний угол
-  // для красоты добавим оси координат (как у всех нормальных людей)
-  // в правый верхний угол
-}
-
 void Renderer::BuildShader() {
-  // подключения шейдеров к графическому конвейру:
-  // read shaders
-  std::string vertexCode;
-  std::string fragmentCode;
-  std::ifstream vShaderFile;
-  std::ifstream fShaderFile;
-  // ensure ifstream objects can throw exceptions:
-  vShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-  fShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+  unsigned int vertex = compile_shader(GL_VERTEX_SHADER, VERTEX_SHADER);
+  unsigned int fragment = 0, program = 0;
   try {
-    // open files
-    vShaderFile.open("shaders/shader.vert");
-    fShaderFile.open("shaders/shader.frag");
-    std::stringstream vShaderStream, fShaderStream;
-    // read file’s buffer contents into streams
-    // здесь мы просто специфически читаем файл
-    // (read buffer) возвращает указатель на внутренний низкоуровневый буфер
-    // открытого файла
-    vShaderStream << vShaderFile.rdbuf();
-    fShaderStream << fShaderFile.rdbuf();
-    // close file handlers
-    vShaderFile.close();
-    fShaderFile.close();
-    // convert stream into string
-    vertexCode = vShaderStream.str();
-    fragmentCode = fShaderStream.str();
-  } catch (std::ifstream::failure e) {
-    std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ" << std::endl;
+    fragment = compile_shader(GL_FRAGMENT_SHADER, FRAGMENT_SHADER);
+    program = glCreateProgram();
+    glAttachShader(program, vertex);
+    glAttachShader(program, fragment);
+    glLinkProgram(program);
+    int ok = 0;
+    glGetProgramiv(program, GL_LINK_STATUS, &ok);
+    if (!ok) {
+      int length = 0;
+      glGetProgramiv(program, GL_INFO_LOG_LENGTH, &length);
+      std::string log(std::max(length, 1), '\0');
+      glGetProgramInfoLog(program, length, nullptr, log.data());
+      throw std::runtime_error("Shader linking failed: " + log);
+    }
+  } catch (...) {
+    glDeleteShader(vertex);
+    if (fragment) glDeleteShader(fragment);
+    if (program) glDeleteProgram(program);
+    throw;
   }
-  const char* vShaderCode = vertexCode.c_str();
-  const char* fShaderCode = fragmentCode.c_str();
-
-  // create vertex shader
-  unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-  int success;
-  char infoLog[512];
-  glShaderSource(vertexShader, 1, &vShaderCode, NULL);
-  glCompileShader(vertexShader);
-  // print compile errors if any
-  glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-  if (!success) {
-    glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-    std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n"
-              << infoLog << std::endl;
-  };
-
-  // create fragment shader
-  unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-  glShaderSource(fragmentShader, 1, &fShaderCode, NULL);
-  glCompileShader(fragmentShader);
-  // print compile errors if any
-  glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-  if (!success) {
-    glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-    std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n"
-              << infoLog << std::endl;
-  };
-
-  // shader program
-  shaderProgram = glCreateProgram();
-  glAttachShader(shaderProgram, vertexShader);
-  glAttachShader(shaderProgram, fragmentShader);
-  glLinkProgram(shaderProgram);
-  // print linking errors if any
-  glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-  if (!success) {
-    glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-    std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n"
-              << infoLog << std::endl;
-  }
-  // delete shaders; they’re linked into our program and no longer necessary
-  glDeleteShader(vertexShader);
-  glDeleteShader(fragmentShader);
-  glUseProgram(shaderProgram);
+  glDeleteShader(vertex);
+  glDeleteShader(fragment);
+  if (program_) glDeleteProgram(program_);
+  program_ = program;
 }
-
+void Renderer::SetVideoData(std::span<const TriangelMesh> slices,
+                            glm::dvec3 min, glm::dvec3 max) {
+  std::vector<float> vertices;
+  std::vector<unsigned int> indices;
+  const auto center = (min + max) * 0.5;
+  const auto extent = max - min;
+  const double scale = 1.5 / std::max({extent.x, extent.y, extent.z});
+  std::vector<int> slice_counts;
+  for (const auto& mesh : slices) {
+    const auto offset = vertices.size() / 6;
+    for (const auto& v : mesh.vertices()) {
+      glm::dvec3 p = (glm::dvec3(v) - center) * scale;
+      vertices.insert(vertices.end(),
+                      {float(p.x), float(p.y), float(p.z), .3f, .7f, .9f});
+    }
+    for (const auto& triangle : mesh.triangles())
+      for (auto i : triangle.vertics) {
+        if (i >= mesh.vertices().size() ||
+            offset > std::numeric_limits<unsigned int>::max() ||
+            i > std::numeric_limits<unsigned int>::max() - offset)
+          throw std::runtime_error("Mesh index out of range");
+        indices.push_back(static_cast<unsigned int>(offset + i));
+      }
+    if (indices.size() > size_t(std::numeric_limits<int>::max()))
+      throw std::runtime_error("Mesh too large");
+    slice_counts.push_back(static_cast<int>(indices.size()));
+  }
+  slice_index_counts_ = std::move(slice_counts);
+  index_count_ = 0;
+  glBindVertexArray(vao_);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo_);
+  glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float),
+               vertices.data(), GL_DYNAMIC_DRAW);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int),
+               indices.data(), GL_DYNAMIC_DRAW);
+}
+void Renderer::SetVisibleSlices(std::size_t count) {
+  if (count > slice_index_counts_.size())
+    throw std::out_of_range("Invalid slice count");
+  index_count_ = count == 0 ? 0 : slice_index_counts_[count - 1];
+}
+void Renderer::render_frame() const {
+  if (width_ <= 0 || height_ <= 0) return;
+  glViewport(0, 0, width_, height_);
+  glClearColor(42.f / 255, 42.f / 255, 53.f / 255, 1);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glUseProgram(program_);
+  glUniform1f(glGetUniformLocation(program_, "AmbientLight"),
+              light_ && light_->lightgame ? light_->back_intensity : 1.f);
+  const auto mvp = glGetUniformLocation(program_, "MVP");
+  glUniformMatrix4fv(mvp, 1, GL_FALSE, glm::value_ptr(main_mvp_));
+  glBindVertexArray(vao_);
+  glDrawElements(GL_TRIANGLES, index_count_, GL_UNSIGNED_INT, nullptr);
+  const int size = std::min({120, width_, height_});
+  glViewport(width_ - size, height_ - size, size, size);
+  glClear(GL_DEPTH_BUFFER_BIT);
+  glUniform1f(glGetUniformLocation(program_, "AmbientLight"), 1.f);
+  glUniformMatrix4fv(mvp, 1, GL_FALSE, glm::value_ptr(axes_mvp_));
+  glBindVertexArray(axes_vao_);
+  glDrawArrays(GL_LINES, 0, 34);
+  glViewport(0, 0, width_, height_);
+}
+void Renderer::SetSize(int w, int h) {
+  width_ = w;
+  height_ = h;
+}
+void Renderer::SetLightData(LightSettings* light) { light_ = light; }
+void Renderer::SetDefoultPos() {
+  rotation_ = glm::mat4(1);
+  distance_ = 2;
+}
 void Renderer::BuildViewMatrixs() {
-  // --------------MAIN MATRIX-----------------
-  glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 1.0f);
-  glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-  glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-
-  glm::mat4 mainModel =
-      glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -distance));
-  mainModel *= rotMatrix;
-
-  glm::mat4 mainView =
-      glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-
-  glm::mat4 mainProj = glm::perspective(
-      glm::radians(60.0f), (float)screenWidth / screenHeight, 0.1f, 100.0f);
-  main_MVP = mainProj * mainView * mainModel;
-
-  // -----------------AXES MATRIX------------------
-  // -----------------AXES MATRIX------------------
-
-  // glm::mat4 axesModel = rotMatrix;
-  glm::mat4 axesView =
-      glm::lookAt(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 0.0f, -1.0f),
-                  glm::vec3(0.0f, 1.0f, 0.0f));
-  glm::mat4 axesProj = glm::ortho(-1.5f, 1.5f, -1.5f, 1.5f, 0.1f, 10.0f);
-  axes_MVP = axesProj * axesView * rotMatrix;
+  if (width_ <= 0 || height_ <= 0) return;
+  auto view =
+      glm::lookAt(glm::vec3(0, 0, 1), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+  auto projection =
+      glm::perspective(glm::radians(60.f), float(width_) / height_, .1f, 100.f);
+  main_mvp_ = projection * view *
+              glm::translate(glm::mat4(1), glm::vec3(0, 0, -distance_)) *
+              rotation_;
+  axes_mvp_ =
+      glm::ortho(-1.5f, 1.5f, -1.5f, 1.5f, .1f, 10.f) *
+      glm::lookAt(glm::vec3(0, 0, 3), glm::vec3(0), glm::vec3(0, 1, 0)) *
+      rotation_;
 }
-
-void Renderer::RotateObject(float deltaX, float deltaY) {
-  const float sensitivity = 0.005f;
-  glm::mat4 delta_rot = glm::mat4(1.0f);
-  delta_rot =
-      glm::rotate(delta_rot, deltaX * sensitivity, glm::vec3(0.0f, 1.0f, 0.0f));
-  delta_rot =
-      glm::rotate(delta_rot, deltaY * sensitivity, glm::vec3(1.0f, 0.0f, 0.0f));
-  rotMatrix = delta_rot * rotMatrix;
+void Renderer::RotateObject(float x, float y) {
+  rotation_ = glm::rotate(glm::mat4(1), x * .005f, glm::vec3(0, 1, 0)) *
+              glm::rotate(glm::mat4(1), y * .005f, glm::vec3(1, 0, 0)) *
+              rotation_;
 }
-
-void Renderer::ZoomObject(float delta_z) {
-  float zoomSpeed = 0.2f;
-  distance += zoomSpeed * delta_z;
-
-  if (distance < 0.5) distance = 0.5;
+void Renderer::ZoomObject(float delta) {
+  distance_ = std::clamp(distance_ - delta * .2f, .5f, 20.f);
 }
-
-void Renderer::RenderAxes() const {
-  // размер квадрата под оси
-  const int axesSize = 120;
-  // отступ слева
-  const int paddingleft = 15;
-
-  glViewport(screenWidth - axesSize - paddingleft,
-             screenHeight - axesSize - paddingleft, axesSize, axesSize);
-
-  glClear(GL_DEPTH_BUFFER_BIT);
-  glClear(GL_DEPTH_BUFFER_BIT);
-
-  glBindVertexArray(axes_VAO);
-  glLineWidth(3.0);
-  glDrawArrays(GL_LINES, 0, 28);
-  glBindVertexArray(axes_VAO);
-  glLineWidth(3.0);
-  glDrawArrays(GL_LINES, 0, 28);
-}
-
-void Renderer::RenderLightGame() const {
-  int uni_AmbientLight = glGetUniformLocation(shaderProgram, "AmbientLight");
-  if (localLightsettings->lightgame) {
-    // выставляем параметры фонового света
-    glUniform1f(uni_AmbientLight, localLightsettings->back_intensity);
-  } else {
-    glUniform1f(uni_AmbientLight, 1.0f);
-  }
-}
-
 Renderer::~Renderer() {
-  glDeleteVertexArrays(1, &VAO);
-  glDeleteBuffers(1, &VBO);
-  glDeleteBuffers(1, &EBO);
-  glDeleteVertexArrays(1, &axes_VAO);
-  glDeleteBuffers(1, &axes_VBO);
-  glDeleteProgram(shaderProgram);
+  glDeleteVertexArrays(1, &vao_);
+  glDeleteBuffers(1, &vbo_);
+  glDeleteBuffers(1, &ebo_);
+  glDeleteVertexArrays(1, &axes_vao_);
+  glDeleteBuffers(1, &axes_vbo_);
+  glDeleteProgram(program_);
 }
-
 }  // namespace visual_integrator

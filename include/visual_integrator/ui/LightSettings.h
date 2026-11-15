@@ -2,7 +2,7 @@
 
 namespace visual_integrator {
 
-// вся структура посвящена тому, 
+// вся структура посвящена тому,
 // чтобы очень просто и быстро передавали данные из
 // меню в рендер
 struct LightSettings {
@@ -12,10 +12,9 @@ struct LightSettings {
 
   //--------------BACKGROUND PARAMETRS--------------------
   // наличие (да, мы должны быть способны полность выключть свет)
-  //bool back_Light = false;
+  // bool back_Light = false;
   // интенсивность фонового света
   float back_intensity = 1.000f;
-
 
   bool deffuse_Light = false;
   bool reflect_Light = false;
