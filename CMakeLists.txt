@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+find_package(earcut_hpp CONFIG REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
 find_package(glad CONFIG REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
@@ -31,6 +32,7 @@ add_custom_command(TARGET visual_integrator POST_BUILD
 target_include_directories(visual_integrator PRIVATE include)
 target_link_libraries(visual_integrator PRIVATE
   muparser::muparser
+  earcut_hpp::earcut_hpp
   Eigen3::Eigen
   glad::glad
   glfw
@@ -55,7 +57,7 @@ if(VISUAL_INTEGRATOR_BUILD_TESTS)
       "-DCLANG_FORMAT_EXECUTABLE=${CLANG_FORMAT_EXECUTABLE}"
       -P "${PROJECT_SOURCE_DIR}/tests/format_targets_test.cmake")
   find_package(GTest CONFIG REQUIRED)
-  add_executable(unit_tests tests/smoke_test.cpp tests/marching_cubes_tables_test.cpp
+  add_executable(unit_tests tests/primitives_test.cpp tests/smoke_test.cpp tests/marching_cubes_tables_test.cpp
     tests/marching_cubes_test.cpp src/visualization/marching_cubes.cc src/visualization/primitives.cc
     "src/mathcore/parser.cpp" "include/visual_integrator/ui/lightMenu.h"
     "src/ui/lightMenu.cpp" "include/visual_integrator/ui/LightSettings.h")
@@ -63,6 +65,7 @@ if(VISUAL_INTEGRATOR_BUILD_TESTS)
   target_link_libraries(unit_tests PRIVATE
     GTest::gtest_main
     muparser::muparser
+    earcut_hpp::earcut_hpp
     Eigen3::Eigen
     glad::glad
     glfw

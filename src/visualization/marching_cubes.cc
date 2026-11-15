@@ -11,7 +11,7 @@
 namespace visual_integrator {
 
 Grid::Grid(glm::dvec3 steps, glm::dvec3 origin_of_area, glm::dvec3 area_sizes,
-           std::function<double(glm::dvec3)> impSurfFunc) {
+           ParserFunc& impSurfFunc) {
   step = steps;
   origin = origin_of_area;
   size_t count = 1;
@@ -41,9 +41,9 @@ Grid::Grid(glm::dvec3 steps, glm::dvec3 origin_of_area, glm::dvec3 area_sizes,
     for (size_t j = 0; j < dimensions.y; j++) {
       for (size_t k = 0; k < dimensions.z; k++) {
         size_t position = (i * dimensions.y + j) * dimensions.z + k;
-        valuse.at(position) =
-            impSurfFunc(glm::dvec3{origin.x + i * step.x, origin.y + j * step.y,
-                                   origin.z + k * step.z});
+        valuse.at(position) = impSurfFunc.Evaluate(
+            glm::dvec3{origin.x + i * step.x, origin.y + j * step.y,
+                       origin.z + k * step.z});
         if (!std::isfinite(valuse.at(position))) {
           throw std::invalid_argument("Grid samples must be finite");
         }

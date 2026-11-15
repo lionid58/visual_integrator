@@ -15,10 +15,10 @@ ParserFunc::ParserFunc() {
   parserF.DefineVar("z", &var_z);
 }
 
-double ParserFunc::Evaluate(double x, double y, double z) {
-  var_x = x;
-  var_y = y;
-  var_z = z;
+double ParserFunc::Evaluate(glm::dvec3 vec) {
+  var_x = vec.x;
+  var_y = vec.y;
+  var_z = vec.z;
   try {
     return parserF.Eval();
   } catch (mu::Parser::exception_type& e) {
