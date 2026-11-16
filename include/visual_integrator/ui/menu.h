@@ -18,6 +18,8 @@ public:
   bool openDemoWind = false;
   bool openLightWind = false;
 
+  bool changed = false;
+
   Menu() = default;
   ~Menu() = default;
   void Show();

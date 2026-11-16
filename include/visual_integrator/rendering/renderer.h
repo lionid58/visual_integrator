@@ -19,7 +19,7 @@ class Renderer {
 	void SetLightData(LightSettings* light);
 	void SetVideoData();
 
-	void BuildShader();
+	unsigned int BuildShader(const char* vertexPath, const char* fragmentPath);
 	void BuildViewMatrixs();
     void RotateObject(float delta_x, float delta_y);
     void ZoomObject(float delta_z);
@@ -36,21 +36,27 @@ class Renderer {
 	// VBO - vertices buffer object
 	// EBO - element buffer object
 	*/
-	unsigned int VAO, VBO, EBO, shaderProgram;
-	// это для осей координат
-	unsigned int axes_VAO, axes_VBO;
+    unsigned int VAO, VBO, EBO, basicshaderProgram, lightshaderProgram;
+	// это для осей координат и источника света
+    unsigned int axes_VAO, axes_VBO, lightSourse_VAO, lightSourse_VBO;
+
 	int screenWidth, screenHeight, vertexCount = 0;
  	// матрица накопления вращения
 	glm::mat4 rotMatrix = glm::mat4(1.0f);
 	// MVP матрицы - это произведение матрц модели * взгляда * проекции
-	glm::mat4 main_MVP, light_main_MVP, axes_MVP;
+	glm::mat4 main_MVP, light_main_MVP, axes_MVP, lightSourse_MVP;
+	// mainModel
+    glm::mat4 mainModel;
 	// расстояние от камеры
-	float distance = 2.0f;
+	float distance = 6.0f;
 	void InitAxes();
     void RenderAxes() const;
 
+	void InitLightSource();
+    void RenderLightSource() const;
+
 	// Параметры свободной камеры
-    glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 2.0f);
+    glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 6.0f);
     glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
     glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
     float yaw = -90.0f;  // взгляд вдоль -Z

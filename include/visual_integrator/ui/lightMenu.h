@@ -1,5 +1,6 @@
 #pragma once
 #include <imgui.h>
+#include <iostream>
 #include "visual_integrator/ui/LightSettings.h"
 
 
@@ -10,7 +11,9 @@ class LightMenu {
 public:
   LightMenu() = default;
   ~LightMenu() = default;
-  void LightShow();
+
+  // bool для того чтобы следить за изменениями
+  bool LightShow();
   // вот так мы связываем меню и рендер
   void SetLightData(LightSettings* light);
 
