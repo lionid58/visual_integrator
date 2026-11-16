@@ -18,8 +18,8 @@ Renderer::Renderer() {
   }
   // Шейдеров несколько, так что собиаем их в конструкторе
   basicshaderProgram = BuildShader("shaders/shader.vert", "shaders/shader.frag");
-  
   lightshaderProgram = BuildShader("shaders/lightshader.vert", "shaders/lightshader.frag");
+  shadowShaderProgram = BuildShader("shaders/shadow.vert", "shaders/shadow.frag");
 
   // эта строка отвечает за обработку глубины
   glEnable(GL_DEPTH_TEST);
@@ -56,6 +56,7 @@ Renderer::Renderer() {
 
   InitAxes();
   InitLightSource();
+  InitShadowMap();
 }
 
 void Renderer::InitAxes() {
@@ -195,6 +196,12 @@ float LSVertices[] = {
   glEnableVertexAttribArray(1);}
 
 void Renderer::render_frame() const {
+  
+  if (localLightsettings->lightgame) 
+  {
+    RenderShadowPass();
+  }
+  
   // тут мы назначаем окно 
   glViewport(0, 0, screenWidth, screenHeight);
   // я очень захотел сиреневое окно, оно крутое
@@ -249,20 +256,28 @@ void Renderer::render_frame() const {
     glUniformMatrix4fv(uni_MVP, 1, GL_FALSE, glm::value_ptr(axes_MVP));
     // рисуем
     RenderAxes();
-  } else if (localLightsettings->lamp)
+  } 
+  else
   {
+    // Включаем базовый шейдер для отрисовки самих светильников
     glUseProgram(basicshaderProgram);
-    // эта строка ищет строку MVP в таблице шейдеров, чтобы туда отправить
-    // матрицы, так как эта строка одинакова, то будем искать её один раз
-    uni_MVP = glGetUniformLocation(basicshaderProgram, "MVP");
-    // Передаем MVP матрицу специально для источника света (она должна двигать его в нужную точку)
-    glUniformMatrix4fv(uni_MVP, 1, GL_FALSE, glm::value_ptr(lightSourse_MVP));
+    int basic_MVP = glGetUniformLocation(basicshaderProgram, "MVP");
 
-    //яркость истоника 1
+    // Ставим максимальную яркость, чтобы светильники всегда были ярко-белыми
     int basic_Ambient = glGetUniformLocation(basicshaderProgram, "AmbientLight");
     glUniform1f(basic_Ambient, 1.0f);
 
-    RenderLightSource();
+    // Рисуем маленькую лампочку, если включена
+    if (localLightsettings->lamp) {
+      glUniformMatrix4fv(basic_MVP, 1, GL_FALSE, glm::value_ptr(lightSourse_MVP));
+      RenderLightSource();
+    }
+
+    // Рисуем далёкое огромное солнце, если включено
+    if (localLightsettings->sunLight) {
+      glUniformMatrix4fv(basic_MVP, 1, GL_FALSE, glm::value_ptr(sunSourse_MVP));
+      RenderLightSource();
+    }
   }
 }
 
@@ -380,20 +395,54 @@ void Renderer::BuildViewMatrixs(){
         glm::perspective(glm::radians(60.0f), (float)screenWidth / screenHeight, 0.1f, 100.0f);
     if (localLightsettings->lightgame)
     {
-        //--------------MAIN MATRIX-----------------
-        //mainModel = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -distance));
-        mainModel = rotMatrix;
-        glm::mat4 mainView = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-        light_main_MVP = mainProj * mainView * mainModel;
+      //--------------MAIN MATRIX-----------------
+      mainModel = rotMatrix;
+      glm::mat4 mainView = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+      light_main_MVP = mainProj * mainView * mainModel;
 
-        //--------------LIGHT SOURSE MATRIX-----------------
-        if (localLightsettings->lamp) 
-        {
-            glm::mat4 cubeModel = glm::translate(glm::mat4(1.0f), 
-                localLightsettings->point_light_pos);
-            lightSourse_MVP = mainProj * mainView * cubeModel;
-        }
+      // 0. Матрица теней СОЛНЦА (лучи параллельны -> ортографическая проекция)
+      if (localLightsettings->sunLight) {
+        float yawRad = glm::radians(localLightsettings->sun_yaw);
+        float pitchRad = glm::radians(localLightsettings->sun_pitch);
+        glm::vec3 sunDir = glm::normalize(
+            glm::vec3(cos(pitchRad) * cos(yawRad), sin(pitchRad), cos(pitchRad) * sin(yawRad)));
 
+        // --- ВИЗУАЛЬНОЕ СОЛНЦЕ ---
+        // Ставим куб в 50 юнитах от камеры в сторону источника
+        glm::vec3 visualSunPos = cameraPos + sunDir * 50.0f;
+        glm::mat4 sModel = glm::translate(glm::mat4(1.0f), visualSunPos);
+        sModel = glm::scale(sModel, glm::vec3(5.0f));  // Делаем куб в 5 раз больше
+        sunSourse_MVP = mainProj * mainView * sModel;
+        // -------------------------
+
+        glm::mat4 lightProj = glm::ortho(-4.0f, 4.0f, -4.0f, 4.0f, 0.1f, 20.0f);
+        glm::mat4 lightView =
+            glm::lookAt(sunDir * 6.0f, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        lightSpaceMatrix[0] = lightProj * lightView;
+      }
+
+      // 1. Матрица кубика и теней ЛАМПОЧКИ (перспективная проекция на центр сцены)
+      if (localLightsettings->lamp) {
+        glm::vec3 pos = localLightsettings->point_light_pos;
+        glm::mat4 cubeModel = glm::translate(glm::mat4(1.0f), pos);
+        lightSourse_MVP = mainProj * mainView * cubeModel;
+
+        glm::mat4 lightProj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 20.0f);
+        // Защита от коллинеарности с вектором Up, если лампа строго над/под (0, 0, 0)
+        glm::vec3 upVec = (std::abs(pos.x) < 0.001f && std::abs(pos.z) < 0.001f)
+                              ? glm::vec3(0.0f, 0.0f, 1.0f)
+                              : glm::vec3(0.0f, 1.0f, 0.0f);
+        glm::mat4 lightView = glm::lookAt(pos, glm::vec3(0.0f), upVec);
+        lightSpaceMatrix[1] = lightProj * lightView;
+      }
+
+      // 2. Матрица теней ПРОЖЕКТОРА (совпадает с позицией и взглядом камеры)
+      if (localLightsettings->spotlight) {
+        float fov = glm::clamp(localLightsettings->spot_outer_cutoff * 2.0f, 10.0f, 120.0f);
+        glm::mat4 lightProj = glm::perspective(glm::radians(fov), 1.0f, 0.1f, 25.0f);
+        glm::mat4 lightView = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+        lightSpaceMatrix[2] = lightProj * lightView;
+      }
     }
     else
     {
@@ -479,6 +528,20 @@ void Renderer::RenderLightGame() const {
 
     if (localLightsettings->lightgame)
     {
+      const char* samplerNames[3] = {"shadowMapSun", "shadowMapLamp", "shadowMapSpot"};
+      const char* matrixNames[3] = {"dirLight.lightSpaceMatrix", "pointLight.lightSpaceMatrix",
+                                      "spotLight.lightSpaceMatrix"};
+
+      for (int i = 0; i < 3; ++i) 
+      {
+          glActiveTexture(GL_TEXTURE0 + i);
+          glBindTexture(GL_TEXTURE_2D, depthMap[i]);
+          glUniform1i(glGetUniformLocation(lightshaderProgram, samplerNames[i]), i);
+          glUniformMatrix4fv(glGetUniformLocation(lightshaderProgram, matrixNames[i]), 1, GL_FALSE,
+                             glm::value_ptr(lightSpaceMatrix[i]));
+      }
+      glActiveTexture(GL_TEXTURE0);
+
       int uni_AmbientLight = glGetUniformLocation(lightshaderProgram, "AmbientLight");
       glUniform1f(uni_AmbientLight, localLightsettings->back_intensity);
 
@@ -542,6 +605,57 @@ void Renderer::RenderLightGame() const {
 
 }
 
+void Renderer::InitShadowMap() {
+  glGenFramebuffers(3, depthMapFBO);
+  glGenTextures(3, depthMap);
+
+  float borderColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
+
+  for (int i = 0; i < 3; ++i) {
+    glBindTexture(GL_TEXTURE_2D, depthMap[i]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0,
+                 GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO[i]);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap[i], 0);
+    // Цветовой буфер не нужен, пишем только глубину
+    glDrawBuffer(GL_NONE);
+    glReadBuffer(GL_NONE);
+  }
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void Renderer::RenderShadowPass() const {
+  glUseProgram(shadowShaderProgram);
+  glUniformMatrix4fv(glGetUniformLocation(shadowShaderProgram, "model"), 1, GL_FALSE,
+                     glm::value_ptr(mainModel));
+
+  glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+  glBindVertexArray(VAO);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+
+  bool activeLights[3] = {localLightsettings->sunLight, localLightsettings->lamp,
+                          localLightsettings->spotlight};
+
+  int uni_lightSpace = glGetUniformLocation(shadowShaderProgram, "lightSpaceMatrix");
+
+  for (int i = 0; i < 3; ++i) {
+    if (!activeLights[i]) continue;
+
+    glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO[i]);
+    glClear(GL_DEPTH_BUFFER_BIT);
+    glUniformMatrix4fv(uni_lightSpace, 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix[i]));
+    glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, 0);
+  }
+
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
 Renderer::~Renderer()
 {
   glDeleteVertexArrays(1, &VAO);
@@ -556,6 +670,10 @@ Renderer::~Renderer()
 
   glDeleteProgram(basicshaderProgram);
   glDeleteProgram(lightshaderProgram);
+
+  glDeleteFramebuffers(3, depthMapFBO);
+  glDeleteTextures(3, depthMap);
+  glDeleteProgram(shadowShaderProgram);
 }
 
 }  // namespace visual_integrator

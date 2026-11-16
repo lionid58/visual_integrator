@@ -36,7 +36,7 @@ class Renderer {
 	// VBO - vertices buffer object
 	// EBO - element buffer object
 	*/
-    unsigned int VAO, VBO, EBO, basicshaderProgram, lightshaderProgram;
+    unsigned int VAO, VBO, EBO, basicshaderProgram, lightshaderProgram, shadowShaderProgram;
 	// это для осей координат и источника света
     unsigned int axes_VAO, axes_VBO, lightSourse_VAO, lightSourse_VBO;
 
@@ -44,7 +44,7 @@ class Renderer {
  	// матрица накопления вращения
 	glm::mat4 rotMatrix = glm::mat4(1.0f);
 	// MVP матрицы - это произведение матрц модели * взгляда * проекции
-	glm::mat4 main_MVP, light_main_MVP, axes_MVP, lightSourse_MVP;
+	glm::mat4 main_MVP, light_main_MVP, axes_MVP, lightSourse_MVP, sunSourse_MVP;
 	// mainModel
     glm::mat4 mainModel;
 	// расстояние от камеры
@@ -61,6 +61,16 @@ class Renderer {
     glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
     float yaw = -90.0f;  // взгляд вдоль -Z
     float pitch = 0.0f;
+
+	//============== Тени =======================
+	static const unsigned int SHADOW_WIDTH = 2048;
+    static const unsigned int SHADOW_HEIGHT = 2048;
+    unsigned int depthMapFBO[3];
+    unsigned int depthMap[3];
+    glm::mat4 lightSpaceMatrix[3];
+
+    void InitShadowMap();
+    void RenderShadowPass() const;
 };
 
 }  // namespace visual_integrator

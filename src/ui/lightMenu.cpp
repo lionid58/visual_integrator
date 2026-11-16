@@ -16,11 +16,12 @@ bool LightMenu::LightShow() {
 
   if (ImGui::CollapsingHeader("Sun (Directional)")) {
     ImGui::Indent();
-    ImGui::Checkbox("Enable Sun", &localLightsettings->sunLight);
+    changed |= ImGui::Checkbox("Enable Sun", &localLightsettings->sunLight);
     ImGui::ColorEdit3("Sun RGB", &localLightsettings->sun_color.x);
-    ImGui::SliderFloat("Azimuth (yaw)", &localLightsettings->sun_yaw, -180.0f, 180.0f, "%.1f deg");
-    ImGui::SliderFloat("Elevation (pitch)", &localLightsettings->sun_pitch, -89.0f, 89.0f,
-                       "%.1f deg");
+    changed |= ImGui::SliderFloat("Azimuth (yaw)", &localLightsettings->sun_yaw, -180.0f, 180.0f,
+                                  "%.1f deg");
+    changed |= ImGui::SliderFloat("Elevation (pitch)", &localLightsettings->sun_pitch, -89.0f,
+                                  89.0f, "%.1f deg");
     ImGui::Unindent();
   }
 
@@ -35,11 +36,11 @@ bool LightMenu::LightShow() {
 
   if (ImGui::CollapsingHeader("Spotlight (Flashlight)")) {
     ImGui::Indent();
-    ImGui::Checkbox("Enable Spotlight", &localLightsettings->spotlight);
+    changed |= ImGui::Checkbox("Enable Spotlight", &localLightsettings->spotlight);
     ImGui::ColorEdit3("Spot RGB", &localLightsettings->spot_color.x);
     ImGui::SliderFloat("Inner Angle", &localLightsettings->spot_cutoff, 1.0f, 45.0f, "%.1f deg");
-    ImGui::SliderFloat("Outer Angle", &localLightsettings->spot_outer_cutoff, 1.0f, 60.0f,
-                       "%.1f deg");
+    changed |= ImGui::SliderFloat("Outer Angle", &localLightsettings->spot_outer_cutoff, 1.0f,
+                                  60.0f, "%.1f deg");
 
     // Защита: внешний угол конуса не должен быть меньше внутреннего
     if (localLightsettings->spot_outer_cutoff < localLightsettings->spot_cutoff) {
