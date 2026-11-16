@@ -17,7 +17,6 @@ int run()
 
 	//glViewport(0, 0, framebuffer_width, framebuffer_height);
     renderer.SetVideoData();
-    renderer.BuildShader();
 	while (!window.should_close()) 
 	{
 		// Start the Dear ImGui frame
@@ -91,7 +90,7 @@ int run()
         const auto [width, height] = window.framebuffer_size();
         renderer.SetSize(width, height);
 
-        if (frameChange)
+        if (frameChange || menu.changed )
         {
             renderer.BuildViewMatrixs();
             frameChange = false;

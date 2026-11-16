@@ -14,6 +14,8 @@ void Menu::Show() {
     ImGui::SetNextWindowSize(ImVec2(300, viewport->WorkSize.y));
 
     ImGui::Begin("Menu");
+    // чтобы флаг не оставался вечно равным true припереключении со вкладки light game:
+    changed = false; 
 
     if (ImGui::BeginTabBar("MainTabBar"))
     {
@@ -56,8 +58,7 @@ void Menu::Show() {
         }
         if (ImGui::BeginTabItem("Light game"))
         {
-              lightmenu.LightShow();
-
+          changed = lightmenu.LightShow();
               ImGui::EndTabItem();
         }
         ImGui::EndTabBar();

@@ -16,6 +16,11 @@ Renderer::Renderer() {
   if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress))) {
     throw std::runtime_error("Failed to load OpenGL");
   }
+  // Шейдеров несколько, так что собиаем их в конструкторе
+  basicshaderProgram = BuildShader("shaders/shader.vert", "shaders/shader.frag");
+  
+  lightshaderProgram = BuildShader("shaders/lightshader.vert", "shaders/lightshader.frag");
+
   // эта строка отвечает за обработку глубины
   glEnable(GL_DEPTH_TEST);
   // обработка мыши находиться в window.cpp
@@ -50,6 +55,7 @@ Renderer::Renderer() {
   glEnableVertexAttribArray(1);
 
   InitAxes();
+  InitLightSource();
 }
 
 void Renderer::InitAxes() {
@@ -115,6 +121,78 @@ void Renderer::InitAxes() {
   glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
   glEnableVertexAttribArray(1);
 }
+void Renderer::InitLightSource() 
+{
+  float y = 0, z = 0, x = 0;
+float LSVertices[] = {
+    // Лицевая грань (z = 0.1f)
+    x - 0.1f, y - 0.1f,   z + 0.1f,  1.0f, 1.0f, 1.0f,
+    x + 0.1f, y - 0.1f,   z + 0.1f,  1.0f, 1.0f, 1.0f,
+    x + 0.1f, y + 0.1f,   z + 0.1f,  1.0f, 1.0f, 1.0f,
+    x + 0.1f, y + 0.1f,   z + 0.1f,  1.0f, 1.0f, 1.0f,
+    x - 0.1f, y + 0.1f,   z + 0.1f,  1.0f, 1.0f, 1.0f,
+    x - 0.1f, y - 0.1f,   z + 0.1f,  1.0f, 1.0f, 1.0f,
+
+    // Задняя грань (z = -0.1f)
+    x - 0.1f, y - 0.1f, z - 0.1f,  1.0f, 1.0f, 1.0f,
+    x + 0.1f, y - 0.1f, z - 0.1f,  1.0f, 1.0f, 1.0f,
+    x + 0.1f, y + 0.1f, z - 0.1f,  1.0f, 1.0f, 1.0f,
+    x + 0.1f, y + 0.1f, z - 0.1f,  1.0f, 1.0f, 1.0f,
+    x - 0.1f, y + 0.1f, z - 0.1f,  1.0f, 1.0f, 1.0f,
+    x - 0.1f, y - 0.1f, z - 0.1f,  1.0f, 1.0f, 1.0f,
+
+    // Левая грань (x = -0.1f)
+    x - 0.1f, y + 0.1f, z + 0.1f,  1.0f, 1.0f, 1.0f,
+    x - 0.1f, y + 0.1f, z - 0.1f,  1.0f, 1.0f, 1.0f,
+    x - 0.1f, y - 0.1f, z - 0.1f,  1.0f, 1.0f, 1.0f,
+    x - 0.1f, y - 0.1f, z - 0.1f,  1.0f, 1.0f, 1.0f,
+    x - 0.1f, y - 0.1f, z + 0.1f,  1.0f, 1.0f, 1.0f,
+    x - 0.1f, y + 0.1f, z + 0.1f,  1.0f, 1.0f, 1.0f,
+
+    // Правая грань (x = 0.1f)
+     x + 0.1f, y + 0.1f, z + 0.1f,  1.0f, 1.0f, 1.0f,
+     x + 0.1f, y + 0.1f, z - 0.1f,  1.0f, 1.0f, 1.0f,
+     x + 0.1f, y - 0.1f, z - 0.1f,  1.0f, 1.0f, 1.0f,
+     x + 0.1f, y - 0.1f, z - 0.1f,  1.0f, 1.0f, 1.0f,
+     x + 0.1f, y - 0.1f, z + 0.1f,  1.0f, 1.0f, 1.0f,
+     x + 0.1f, y + 0.1f, z + 0.1f,  1.0f, 1.0f, 1.0f,
+
+    // Нижняя грань (y = -0.1f)
+     x - 0.1f, y - 0.1f, z - 0.1f,  1.0f, 1.0f, 1.0f,
+     x + 0.1f, y - 0.1f, z - 0.1f,  1.0f, 1.0f, 1.0f,
+     x + 0.1f, y - 0.1f, z + 0.1f,  1.0f, 1.0f, 1.0f,
+     x + 0.1f, y - 0.1f, z + 0.1f,  1.0f, 1.0f, 1.0f,
+     x - 0.1f, y - 0.1f, z + 0.1f,  1.0f, 1.0f, 1.0f,
+     x - 0.1f, y - 0.1f, z - 0.1f,  1.0f, 1.0f, 1.0f,
+
+    // Верхняя грань (y = 0.1f)
+     x - 0.1f, y + 0.1f, z - 0.1f,  1.0f, 1.0f, 1.0f,
+     x + 0.1f, y + 0.1f, z - 0.1f,  1.0f, 1.0f, 1.0f,
+     x + 0.1f, y + 0.1f, z + 0.1f,  1.0f, 1.0f, 1.0f,
+     x + 0.1f, y + 0.1f, z + 0.1f,  1.0f, 1.0f, 1.0f,
+     x - 0.1f, y + 0.1f, z + 0.1f,  1.0f, 1.0f, 1.0f,
+     x - 0.1f, y + 0.1f, z - 0.1f,  1.0f, 1.0f, 1.0f
+  };
+
+  glGenVertexArrays(1, &lightSourse_VAO);
+  glBindVertexArray(lightSourse_VAO);
+
+  // glGenBuffers — generate buffer object names
+  glGenBuffers(1, &lightSourse_VBO);
+  glBindBuffer(GL_ARRAY_BUFFER, lightSourse_VBO);
+  // эти строки передают данные на видеокарту
+  // это вершины в локальных координатах
+  glBufferData(GL_ARRAY_BUFFER, sizeof(LSVertices), LSVertices, GL_STATIC_DRAW);
+
+  // далее мы обьясняем видеокарте что значат переданные файлы:
+  // ---первые три числа это КООРДИНАТЫ В ПРОСТРАНСТВЧЕ
+  // ---оставшиеся это цвет
+  // position
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+  glEnableVertexAttribArray(0);
+  // color
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+  glEnableVertexAttribArray(1);}
 
 void Renderer::render_frame() const {
   // тут мы назначаем окно 
@@ -126,20 +204,36 @@ void Renderer::render_frame() const {
   glClearColor(intensity * 42.0f / 255.0, intensity * 42.0f / 255.0, intensity * 53.0f / 255, 1.0f);
   // и отчищаем цвета
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  glUseProgram(shaderProgram);
 
-  // эта строка ищет строку MVP в таблице шейдеров, чтобы туда отправить
-  // матрицы, так как эта строка одинакова, то будем искать её один раз
-  int uni_MVP = glGetUniformLocation(shaderProgram, "MVP");
- 
-  
+  int uni_MVP = 0, uni_model = 0;
+  if (localLightsettings->lightgame)
+  {
+    glUseProgram(lightshaderProgram);
 
+    // эта строка ищет строку MVP в таблице шейдеров, чтобы туда отправить
+    // матрицы, так как эта строка одинакова, то будем искать её один раз
+    uni_MVP = glGetUniformLocation(lightshaderProgram, "MVP");
+    uni_model = glGetUniformLocation(lightshaderProgram, "model");
+
+  } 
+  else
+  {
+    glUseProgram(basicshaderProgram);
+    // эта строка ищет строку MVP в таблице шейдеров, чтобы туда отправить
+    // матрицы, так как эта строка одинакова, то будем искать её один раз
+    uni_MVP = glGetUniformLocation(basicshaderProgram, "MVP");
+  }
+  RenderLightGame();
   // рисуем основную штуку:
   // отправляем нужные матрицы свободные или орбитные
   // свободная - управление на WASD
   // орбитная - только вокруг обьекта
+  
   if (localLightsettings->lightgame)
+  {
     glUniformMatrix4fv(uni_MVP, 1, GL_FALSE, glm::value_ptr(light_main_MVP));
+    glUniformMatrix4fv(uni_model, 1, GL_FALSE, glm::value_ptr(mainModel));
+  }
   else
     glUniformMatrix4fv(uni_MVP, 1, GL_FALSE, glm::value_ptr(main_MVP));
   // рисуем
@@ -147,7 +241,7 @@ void Renderer::render_frame() const {
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
   glDrawElements(GL_TRIANGLES, vertexCount, GL_UNSIGNED_INT, 0);
 
-  RenderLightGame();
+  
   
   if (!localLightsettings->lightgame) {
     // рисуем оси:
@@ -155,6 +249,20 @@ void Renderer::render_frame() const {
     glUniformMatrix4fv(uni_MVP, 1, GL_FALSE, glm::value_ptr(axes_MVP));
     // рисуем
     RenderAxes();
+  } else if (localLightsettings->lamp)
+  {
+    glUseProgram(basicshaderProgram);
+    // эта строка ищет строку MVP в таблице шейдеров, чтобы туда отправить
+    // матрицы, так как эта строка одинакова, то будем искать её один раз
+    uni_MVP = glGetUniformLocation(basicshaderProgram, "MVP");
+    // Передаем MVP матрицу специально для источника света (она должна двигать его в нужную точку)
+    glUniformMatrix4fv(uni_MVP, 1, GL_FALSE, glm::value_ptr(lightSourse_MVP));
+
+    //яркость истоника 1
+    int basic_Ambient = glGetUniformLocation(basicshaderProgram, "AmbientLight");
+    glUniform1f(basic_Ambient, 1.0f);
+
+    RenderLightSource();
   }
 }
 
@@ -164,7 +272,7 @@ void Renderer::SetSize(int framebuffer_width, int framebuffer_height) {
 }
 void Renderer::SetDefoultPos() {
   rotMatrix = glm::mat4(1.0f);
-  distance = 2.0f;
+  distance = 6.0f;
 }
 void Renderer::SetLightData(LightSettings* light) { localLightsettings = light; };
 void Renderer::SetVideoData() {
@@ -193,7 +301,7 @@ void Renderer::SetVideoData() {
   // в правый верхний угол
 }
 
-void Renderer::BuildShader() {
+unsigned int Renderer::BuildShader(const char* vertexPath, const char* fragmentPath) {
   // подключения шейдеров к графическому конвейру:
   // read shaders
   std::string vertexCode;
@@ -205,8 +313,8 @@ void Renderer::BuildShader() {
   fShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
   try {
     // open files
-    vShaderFile.open("shaders/shader.vert");
-    fShaderFile.open("shaders/shader.frag");
+    vShaderFile.open(vertexPath);
+    fShaderFile.open(fragmentPath);
     std::stringstream vShaderStream, fShaderStream;
     // read file’s buffer contents into streams
     // здесь мы просто специфически читаем файл
@@ -250,7 +358,7 @@ void Renderer::BuildShader() {
   };
 
   // shader program
-  shaderProgram = glCreateProgram();
+  unsigned int shaderProgram = glCreateProgram();
   glAttachShader(shaderProgram, vertexShader);
   glAttachShader(shaderProgram, fragmentShader);
   glLinkProgram(shaderProgram);
@@ -264,6 +372,7 @@ void Renderer::BuildShader() {
   glDeleteShader(vertexShader);
   glDeleteShader(fragmentShader);
   glUseProgram(shaderProgram);
+  return shaderProgram;
 }
 
 void Renderer::BuildViewMatrixs(){
@@ -272,16 +381,25 @@ void Renderer::BuildViewMatrixs(){
     if (localLightsettings->lightgame)
     {
         //--------------MAIN MATRIX-----------------
-        glm::mat4 mainModel = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -distance));
-        mainModel *= rotMatrix;
+        //mainModel = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -distance));
+        mainModel = rotMatrix;
         glm::mat4 mainView = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
         light_main_MVP = mainProj * mainView * mainModel;
+
+        //--------------LIGHT SOURSE MATRIX-----------------
+        if (localLightsettings->lamp) 
+        {
+            glm::mat4 cubeModel = glm::translate(glm::mat4(1.0f), 
+                localLightsettings->point_light_pos);
+            lightSourse_MVP = mainProj * mainView * cubeModel;
+        }
+
     }
     else
     {
         //--------------MAIN MATRIX-----------------
         glm::vec3 orbitCamPos = glm::vec3(0.0f, 0.0f, distance);
-        glm::mat4 mainModel = rotMatrix;
+        mainModel = rotMatrix;
         glm::mat4 mainView = glm::lookAt(orbitCamPos, glm::vec3(0.0f, 0.0f, 0.0f), cameraUp);
 
        
@@ -352,17 +470,73 @@ void Renderer::RenderAxes() const{
     glLineWidth(3.0);
     glDrawArrays(GL_LINES, 0, 28);
 }
+void Renderer::RenderLightSource() const {
+  glBindVertexArray(lightSourse_VAO);
+  glDrawArrays(GL_TRIANGLES, 0, 36);
+}
 
 void Renderer::RenderLightGame() const {
 
-    int uni_AmbientLight = glGetUniformLocation(shaderProgram, "AmbientLight");
     if (localLightsettings->lightgame)
     {
-      // выставляем параметры фонового света
+      int uni_AmbientLight = glGetUniformLocation(lightshaderProgram, "AmbientLight");
       glUniform1f(uni_AmbientLight, localLightsettings->back_intensity);
+
+      glUniform1i(glGetUniformLocation(lightshaderProgram, "useSun"),
+                  localLightsettings->sunLight ? 1 : 0);
+      glUniform1i(glGetUniformLocation(lightshaderProgram, "useLamp"),
+                  localLightsettings->lamp ? 1 : 0);
+      glUniform1i(glGetUniformLocation(lightshaderProgram, "useSpotlight"),
+                  localLightsettings->spotlight ? 1 : 0);
+
+      glUniform3fv(glGetUniformLocation(lightshaderProgram, "viewPos"), 1,
+                   glm::value_ptr(cameraPos));
+      glUniform1f(glGetUniformLocation(lightshaderProgram, "diffuseStrength"),
+                  localLightsettings->diffuse_intensity);
+      glUniform1f(glGetUniformLocation(lightshaderProgram, "specularStrength"),
+                  localLightsettings->specular_intensity);
+      glUniform1f(glGetUniformLocation(lightshaderProgram, "shininess"),
+                  localLightsettings->shininess);
+
+      // --- ДАННЫЕ ДЛЯ СОЛНЦА ---
+      if (localLightsettings->sunLight) {
+        float yawRad = glm::radians(localLightsettings->sun_yaw);
+        float pitchRad = glm::radians(localLightsettings->sun_pitch);
+        glm::vec3 sunDir(cos(pitchRad) * cos(yawRad), sin(pitchRad), cos(pitchRad) * sin(yawRad));
+
+        glUniform3fv(glGetUniformLocation(lightshaderProgram, "dirLight.direction"), 1,
+                     glm::value_ptr(sunDir));
+        glUniform3fv(glGetUniformLocation(lightshaderProgram, "dirLight.color"), 1,
+                     glm::value_ptr(localLightsettings->sun_color));
+      }
+
+      // --- ДАННЫЕ ДЛЯ ЛАМПОЧКИ (КУБИКА) ---
+      if (localLightsettings->lamp) {
+        glUniform3fv(glGetUniformLocation(lightshaderProgram, "pointLight.position"), 1,
+                     glm::value_ptr(localLightsettings->point_light_pos));
+        glUniform3fv(glGetUniformLocation(lightshaderProgram, "pointLight.color"), 1,
+                     glm::value_ptr(localLightsettings->lamp_color));
+      }
+
+      // --- ДАННЫЕ ДЛЯ ПРОЖЕКТОРА (ФОНАРИКА) ---
+      if (localLightsettings->spotlight) {
+        glUniform3fv(glGetUniformLocation(lightshaderProgram, "spotLight.position"), 1,
+                     glm::value_ptr(cameraPos));
+        glUniform3fv(glGetUniformLocation(lightshaderProgram, "spotLight.direction"), 1,
+                     glm::value_ptr(cameraFront));
+        glUniform3fv(glGetUniformLocation(lightshaderProgram, "spotLight.color"), 1,
+                     glm::value_ptr(localLightsettings->spot_color));
+
+        // Передаём косинусы углов (в шейдере сравнение идёт через скалярное произведение dot)
+        glUniform1f(glGetUniformLocation(lightshaderProgram, "spotLight.cutOff"),
+                    glm::cos(glm::radians(localLightsettings->spot_cutoff)));
+        glUniform1f(glGetUniformLocation(lightshaderProgram, "spotLight.outerCutOff"),
+                    glm::cos(glm::radians(localLightsettings->spot_outer_cutoff)));
+      }
     }
     else
     {
+      int uni_AmbientLight = glGetUniformLocation(basicshaderProgram, "AmbientLight");
       glUniform1f(uni_AmbientLight, 1.0f);
     }
 
@@ -373,9 +547,15 @@ Renderer::~Renderer()
   glDeleteVertexArrays(1, &VAO);
   glDeleteBuffers(1, &VBO);
   glDeleteBuffers(1, &EBO);
+
   glDeleteVertexArrays(1, &axes_VAO);
   glDeleteBuffers(1, &axes_VBO);
-  glDeleteProgram(shaderProgram);
+
+  glDeleteVertexArrays(1, &lightSourse_VAO);
+  glDeleteBuffers(1, &lightSourse_VBO);
+
+  glDeleteProgram(basicshaderProgram);
+  glDeleteProgram(lightshaderProgram);
 }
 
 }  // namespace visual_integrator
